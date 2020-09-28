@@ -19,7 +19,20 @@ class Volatility(models.ImpliedVol):
         
         
     def extract(self, url_dict):
+        """
         
+
+        Parameters
+        ----------
+        url_dict : TYPE
+            DESCRIPTION.
+
+        Returns
+        -------
+        TYPE
+            DESCRIPTION.
+
+        """    
         df_dict = {}
         for input_date, url in url_dict.items():
             html = requests.get(url).content
@@ -44,7 +57,20 @@ class Volatility(models.ImpliedVol):
 
 
     def transform(self, start_date):    
-       
+        """
+        
+
+        Parameters
+        ----------
+        start_date : TYPE
+            DESCRIPTION.
+
+        Returns
+        -------
+        TYPE
+            DESCRIPTION.
+
+        """
         self.start_date = start_date
         self.data = self.full_data.copy()
         est = pytz.timezone('US/Eastern')
@@ -60,7 +86,34 @@ class Volatility(models.ImpliedVol):
     
 
     def _imp_vol_by_row(self, row, S, K, r, q, epsilon, option, method):
-    
+        """
+        
+
+        Parameters
+        ----------
+        row : TYPE
+            DESCRIPTION.
+        S : TYPE
+            DESCRIPTION.
+        K : TYPE
+            DESCRIPTION.
+        r : TYPE
+            DESCRIPTION.
+        q : TYPE
+            DESCRIPTION.
+        epsilon : TYPE
+            DESCRIPTION.
+        option : TYPE
+            DESCRIPTION.
+        method : TYPE
+            DESCRIPTION.
+
+        Returns
+        -------
+        row : TYPE
+            DESCRIPTION.
+
+        """
         row_dict = {'Last Price':'Imp Vol - Last', 
                     'Mid':'Imp Vol - Mid', 
                     'Bid':'Imp Vol - Bid', 
@@ -79,7 +132,34 @@ class Volatility(models.ImpliedVol):
     
 
     def _imp_vol_apply(self, input_data, S, K, r, q, epsilon, option, method):
+        """
         
+
+        Parameters
+        ----------
+        input_data : TYPE
+            DESCRIPTION.
+        S : TYPE
+            DESCRIPTION.
+        K : TYPE
+            DESCRIPTION.
+        r : TYPE
+            DESCRIPTION.
+        q : TYPE
+            DESCRIPTION.
+        epsilon : TYPE
+            DESCRIPTION.
+        option : TYPE
+            DESCRIPTION.
+        method : TYPE
+            DESCRIPTION.
+
+        Returns
+        -------
+        input_data : TYPE
+            DESCRIPTION.
+
+        """
         input_data = input_data[(input_data['Strike'] == K) & (input_data['Option Type'] == option)]
         input_data = input_data.apply(lambda x: self._imp_vol_by_row(x, S, K, r, q, epsilon, option, method), axis=1)
         
@@ -88,7 +168,34 @@ class Volatility(models.ImpliedVol):
     
     def combine(self, ticker_label, put_strikes, call_strikes, spot, 
                 r=0.005, q=0, epsilon=0.001, method='NR'):
+        """
         
+
+        Parameters
+        ----------
+        ticker_label : TYPE
+            DESCRIPTION.
+        put_strikes : TYPE
+            DESCRIPTION.
+        call_strikes : TYPE
+            DESCRIPTION.
+        spot : TYPE
+            DESCRIPTION.
+        r : TYPE, optional
+            DESCRIPTION. The default is 0.005.
+        q : TYPE, optional
+            DESCRIPTION. The default is 0.
+        epsilon : TYPE, optional
+            DESCRIPTION. The default is 0.001.
+        method : TYPE, optional
+            DESCRIPTION. The default is 'NR'.
+
+        Returns
+        -------
+        TYPE
+            DESCRIPTION.
+
+        """
         input_data = self.data.copy()
         self.ticker_label = ticker_label
         self.opt_list = []
@@ -113,14 +220,40 @@ class Volatility(models.ImpliedVol):
     
 
     def _vol_map(self, row):
+        """
         
+
+        Parameters
+        ----------
+        row : TYPE
+            DESCRIPTION.
+
+        Returns
+        -------
+        row : TYPE
+            DESCRIPTION.
+
+        """
         row['Smoothed Vol'] = self.smooth_surf.loc[row['Strike'], str(row['Days'])]
         
         return row
        
     
     def smooth(self, order=3):
+        """
         
+
+        Parameters
+        ----------
+        order : TYPE, optional
+            DESCRIPTION. The default is 3.
+
+        Returns
+        -------
+        TYPE
+            DESCRIPTION.
+
+        """
         self.mat_dict = dict(Counter(self.imp_vol_data['Days']))
         self.maturities = sorted(list(set(self.imp_vol_data['Days'])))
         self.strikes_full = sorted(list(set((self.imp_vol_data['Strike'].astype(int)))))
@@ -150,7 +283,25 @@ class Volatility(models.ImpliedVol):
 
     
     def visualize(self, type='line', smoothing=False, interactive=False, notebook=False):
+        """
         
+
+        Parameters
+        ----------
+        type : TYPE, optional
+            DESCRIPTION. The default is 'line'.
+        smoothing : TYPE, optional
+            DESCRIPTION. The default is False.
+        interactive : TYPE, optional
+            DESCRIPTION. The default is False.
+        notebook : TYPE, optional
+            DESCRIPTION. The default is False.
+
+        Returns
+        -------
+        None.
+
+        """
         if type == 'line':
             self.line_graph()
         if type == 'scatter':
@@ -160,7 +311,14 @@ class Volatility(models.ImpliedVol):
             
     
     def line_graph(self):
+        """
         
+
+        Returns
+        -------
+        None.
+
+        """
         dates = list(set(self.imp_vol_data['Expiry']))
         dates.sort()
         tenors = list(set(self.imp_vol_data['TTM']))
@@ -180,7 +338,14 @@ class Volatility(models.ImpliedVol):
 
 
     def scatter_3D(self):
+        """
         
+
+        Returns
+        -------
+        None.
+
+        """
         fig = plt.figure(figsize=(12, 9))
         ax = fig.add_subplot(111, projection='3d')
         x = self.imp_vol_data['Strike']
@@ -196,7 +361,23 @@ class Volatility(models.ImpliedVol):
     
 
     def surface_3D(self, smoothing=False, interactive=False, notebook=False):
+        """
         
+
+        Parameters
+        ----------
+        smoothing : TYPE, optional
+            DESCRIPTION. The default is False.
+        interactive : TYPE, optional
+            DESCRIPTION. The default is False.
+        notebook : TYPE, optional
+            DESCRIPTION. The default is False.
+
+        Returns
+        -------
+        None.
+
+        """
         self.notebook = notebook
         self.interactive = interactive
         

@@ -7,16 +7,6 @@ import scipy.stats as si
 from functools import reduce, wraps
 from scipy.stats import norm
 
-def timethis(func):
-    
-    @wraps(func)
-    def wrapper(*args, **kwargs):
-        start = time.perf_counter()
-        r = func(*args, **kwargs)
-        end = time.perf_counter()
-        print('{}.{} : {} milliseconds'.format(func.__module__, func.__name__, (end - start)*1e3))
-        return r
-    return wrapper
 
 df_dict = {'df_S':100, 
            'df_K':100,
@@ -50,15 +40,55 @@ class Pricer():
         pass
     
     def _ncr(self, n, r):
+        """
         
+
+        Parameters
+        ----------
+        n : TYPE
+            DESCRIPTION.
+        r : TYPE
+            DESCRIPTION.
+
+        Returns
+        -------
+        TYPE
+            DESCRIPTION.
+
+        """
         r = min(r, n-r)
         numer = reduce(op.mul, range(n, n-r, -1), 1)
         denom = reduce(op.mul, range(1, r+1), 1)
         return numer // denom  # or / in Python 2
 
-    @timethis
+
     def bsm(self, S, K, T, r, q, sigma, option='call'):
-        
+        """
+        Black-Scholes-Merton Option price 
+
+        Parameters
+        ----------
+        S : TYPE
+            DESCRIPTION.
+        K : TYPE
+            DESCRIPTION.
+        T : TYPE
+            DESCRIPTION.
+        r : TYPE
+            DESCRIPTION.
+        q : TYPE
+            DESCRIPTION.
+        sigma : TYPE
+            DESCRIPTION.
+        option : TYPE, optional
+            DESCRIPTION. The default is 'call'.
+
+        Returns
+        -------
+        opt_price : TYPE
+            DESCRIPTION.
+
+        """
         b = r - q
         carry = np.exp((b - r) * T)
         d1 = (np.log(S / K) + (b + (0.5 * sigma ** 2)) * T) / (sigma * np.sqrt(T))
@@ -80,9 +110,33 @@ class Pricer():
         return opt_price
     
     
-    @timethis
     def bsm_vega(self, S, K, T, r, q, sigma, option='call'):
-            
+        """
+        Black-Scholes-Merton Option Vega 
+
+        Parameters
+        ----------
+        S : TYPE
+            DESCRIPTION.
+        K : TYPE
+            DESCRIPTION.
+        T : TYPE
+            DESCRIPTION.
+        r : TYPE
+            DESCRIPTION.
+        q : TYPE
+            DESCRIPTION.
+        sigma : TYPE
+            DESCRIPTION.
+        option : TYPE, optional
+            DESCRIPTION. The default is 'call'.
+
+        Returns
+        -------
+        opt_vega : TYPE
+            DESCRIPTION.
+
+        """    
         b = r - q
         carry = np.exp((b - r) * T)
         d1 = (np.log(S / K) + (b + (0.5 * sigma ** 2)) * T) / (sigma * np.sqrt(T))
@@ -93,8 +147,35 @@ class Pricer():
         return opt_vega
     
     
-    @timethis
     def eurobin(self, S, K, T, r, q, sigma, steps, option='call'):
+        """
+        European Binomial Option price.
+
+        Parameters
+        ----------
+        S : TYPE
+            DESCRIPTION.
+        K : TYPE
+            DESCRIPTION.
+        T : TYPE
+            DESCRIPTION.
+        r : TYPE
+            DESCRIPTION.
+        q : TYPE
+            DESCRIPTION.
+        sigma : TYPE
+            DESCRIPTION.
+        steps : TYPE
+            DESCRIPTION.
+        option : TYPE, optional
+            DESCRIPTION. The default is 'call'.
+
+        Returns
+        -------
+        TYPE
+            DESCRIPTION.
+
+        """
         dt = T / steps
         b = r - q
         u = np.exp(sigma * np.sqrt(dt))
@@ -116,9 +197,39 @@ class Pricer():
         return np.exp(-r * T) * val                     
                 
     
-    @timethis
     def crrbin(self, S, K, T, r, q, sigma, steps, option='call', output_flag='price', american=False):
-        
+        """
+        Cox-Ross-Rubinstein Binomial model
+
+        Parameters
+        ----------
+        S : TYPE
+            DESCRIPTION.
+        K : TYPE
+            DESCRIPTION.
+        T : TYPE
+            DESCRIPTION.
+        r : TYPE
+            DESCRIPTION.
+        q : TYPE
+            DESCRIPTION.
+        sigma : TYPE
+            DESCRIPTION.
+        steps : TYPE
+            DESCRIPTION.
+        option : TYPE, optional
+            DESCRIPTION. The default is 'call'.
+        output_flag : TYPE, optional
+            DESCRIPTION. The default is 'price'.
+        american : TYPE, optional
+            DESCRIPTION. The default is False.
+
+        Returns
+        -------
+        result : Various
+            DESCRIPTION.
+
+        """
         z = 1
         if option == 'put':
             z = -1
@@ -173,9 +284,40 @@ class Pricer():
         return result
     
     
-    @timethis
     def lrbin(self, S, K, T, r, q, sigma, steps, option='call', output_flag='price', american=False):
-        # Leisen Reimer Binomial
+        """
+        Leisen Reimer Binomial
+
+        Parameters
+        ----------
+        S : TYPE
+            DESCRIPTION.
+        K : TYPE
+            DESCRIPTION.
+        T : TYPE
+            DESCRIPTION.
+        r : TYPE
+            DESCRIPTION.
+        q : TYPE
+            DESCRIPTION.
+        sigma : TYPE
+            DESCRIPTION.
+        steps : TYPE
+            DESCRIPTION.
+        option : TYPE, optional
+            DESCRIPTION. The default is 'call'.
+        output_flag : TYPE, optional
+            DESCRIPTION. The default is 'price'.
+        american : TYPE, optional
+            DESCRIPTION. The default is False.
+
+        Returns
+        -------
+        result : TYPE
+            DESCRIPTION.
+
+        """
+         
         z = 1
         if option == 'put':
             z = -1
@@ -231,10 +373,40 @@ class Pricer():
         return result        
     
     
-    @timethis
     def tt(self, S, K, T, r, q, sigma, steps, option='call', output_flag='price', american=False):
-        # Trinomial Tree
-        
+        """
+        Trinomial Tree
+
+        Parameters
+        ----------
+        S : TYPE
+            DESCRIPTION.
+        K : TYPE
+            DESCRIPTION.
+        T : TYPE
+            DESCRIPTION.
+        r : TYPE
+            DESCRIPTION.
+        q : TYPE
+            DESCRIPTION.
+        sigma : TYPE
+            DESCRIPTION.
+        steps : TYPE
+            DESCRIPTION.
+        option : TYPE, optional
+            DESCRIPTION. The default is 'call'.
+        output_flag : TYPE, optional
+            DESCRIPTION. The default is 'price'.
+        american : TYPE, optional
+            DESCRIPTION. The default is False.
+
+        Returns
+        -------
+        result : TYPE
+            DESCRIPTION.
+
+        """
+                
         z = 1
         if option == 'put':
             z = -1
@@ -291,12 +463,30 @@ class Pricer():
         return result                     
     
     
-    @timethis
     def imptt(self, S, K, T, r, q, sigma, steps, option='call', output_flag='price', 
                              american=False, step_n=3, state_i=2, skew=0.0004):
-        # Implied Trinomial Tree
         """
-        Return Flag:
+        Implied Trinomial Tree
+
+        Parameters
+        ----------
+        S : TYPE
+            DESCRIPTION.
+        K : TYPE
+            DESCRIPTION.
+        T : TYPE
+            DESCRIPTION.
+        r : TYPE
+            DESCRIPTION.
+        q : TYPE
+            DESCRIPTION.
+        sigma : TYPE
+            DESCRIPTION.
+        steps : TYPE
+            DESCRIPTION.
+        option : Str
+            DESCRIPTION. The default is 'call'.
+        output_flag : Str
             UPM: A matrix of implied up transition probabilities
             DPM: A matrix of implied down transition probabilities
             LVM: A matrix of implied local volatilities
@@ -304,10 +494,31 @@ class Pricer():
             DPni: The implied down transition probability at a single node
             ADni: The Arrow-Debreu price at a single node (at time step step_n and state state_n)
             LVni: The local volatility at a single node
-            call: The value of a European call option
-            put: The value of a European call option
-        """    
-        
+            price: The value of the European option
+        american : TYPE, optional
+            DESCRIPTION. The default is False.
+        step_n : TYPE, optional
+            DESCRIPTION. The default is 3.
+        state_i : TYPE, optional
+            DESCRIPTION. The default is 2.
+        skew : TYPE, optional
+            DESCRIPTION. The default is 0.0004.
+
+        Returns
+        -------
+        result : Various
+            Depending on output flag:
+                UPM: A matrix of implied up transition probabilities
+                DPM: A matrix of implied down transition probabilities
+                LVM: A matrix of implied local volatilities
+                ADM: A matrix of Arrow-Debreu prices at a single node
+                DPni: The implied down transition probability at a single node
+                ADni: The Arrow-Debreu price at a single node (at time step step_n and state state_n)
+                LVni: The local volatility at a single node
+                price: The value of the European optionDESCRIPTION.
+
+        """
+                
         z = 1
         if option == 'put':
             z = -1
@@ -425,9 +636,38 @@ class Pricer():
         return result    
     
     
-    @timethis
     def expfd(self, S, K, T, r, q, sigma, nodes, option='call', american=False):
-        # Explicit Finite Differences
+        """
+        Explicit Finite Differences
+
+        Parameters
+        ----------
+        S : TYPE
+            DESCRIPTION.
+        K : TYPE
+            DESCRIPTION.
+        T : TYPE
+            DESCRIPTION.
+        r : TYPE
+            DESCRIPTION.
+        q : TYPE
+            DESCRIPTION.
+        sigma : TYPE
+            DESCRIPTION.
+        nodes : TYPE
+            DESCRIPTION.
+        option : TYPE, optional
+            DESCRIPTION. The default is 'call'.
+        american : TYPE, optional
+            DESCRIPTION. The default is False.
+
+        Returns
+        -------
+        result : TYPE
+            DESCRIPTION.
+
+        """
+         
         z = 1
         if option == 'put':
             z = -1
@@ -470,9 +710,46 @@ class Pricer():
         return result          
     
     
-    @timethis
     def impfd(self, S, K, T, r, q, sigma, steps, nodes, option='call', american=False):
-        # Implicit Finite Differences
+        """
+        Implicit Finite Differences
+
+        Parameters
+        ----------
+        S : TYPE
+            DESCRIPTION.
+        K : TYPE
+            DESCRIPTION.
+        T : TYPE
+            DESCRIPTION.
+        r : TYPE
+            DESCRIPTION.
+        q : TYPE
+            DESCRIPTION.
+        sigma : TYPE
+            DESCRIPTION.
+        steps : TYPE
+            DESCRIPTION.
+        nodes : TYPE
+            DESCRIPTION.
+        option : TYPE, optional
+            DESCRIPTION. The default is 'call'.
+        american : TYPE, optional
+            DESCRIPTION. The default is False.
+
+        Returns
+        -------
+        result : TYPE
+            DESCRIPTION.
+        C : TYPE
+            DESCRIPTION.
+        p : TYPE
+            DESCRIPTION.
+        CT : TYPE
+            DESCRIPTION.
+
+        """
+         
         z = 1
         if option == 'put':
             z = -1
@@ -515,9 +792,40 @@ class Pricer():
         return result, C, p, CT    
     
     
-    @timethis
     def expfdlns(self, S, K, T, r, q, sigma, steps, nodes, option='call', american=False):
-        # Explicit Finite Differences - rewrite BS-PDE in terms of ln(S) 
+        """
+        Explicit Finite Differences - rewrite BS-PDE in terms of ln(S)
+
+        Parameters
+        ----------
+        S : TYPE
+            DESCRIPTION.
+        K : TYPE
+            DESCRIPTION.
+        T : TYPE
+            DESCRIPTION.
+        r : TYPE
+            DESCRIPTION.
+        q : TYPE
+            DESCRIPTION.
+        sigma : TYPE
+            DESCRIPTION.
+        steps : TYPE
+            DESCRIPTION.
+        nodes : TYPE
+            DESCRIPTION.
+        option : TYPE, optional
+            DESCRIPTION. The default is 'call'.
+        american : TYPE, optional
+            DESCRIPTION. The default is False.
+
+        Returns
+        -------
+        result : TYPE
+            DESCRIPTION.
+
+        """
+          
         z = 1
         if option == 'put':
             z = -1
@@ -551,11 +859,41 @@ class Pricer():
     
         return result   
     
-    
-    @timethis
+   
     def cn(self, S, K, T, r, q, sigma, steps, nodes, option='call', american=False):
-        # Crank Nicolson
-        
+        """
+        Crank Nicolson
+
+        Parameters
+        ----------
+        S : TYPE
+            DESCRIPTION.
+        K : TYPE
+            DESCRIPTION.
+        T : TYPE
+            DESCRIPTION.
+        r : TYPE
+            DESCRIPTION.
+        q : TYPE
+            DESCRIPTION.
+        sigma : TYPE
+            DESCRIPTION.
+        steps : TYPE
+            DESCRIPTION.
+        nodes : TYPE
+            DESCRIPTION.
+        option : TYPE, optional
+            DESCRIPTION. The default is 'call'.
+        american : TYPE, optional
+            DESCRIPTION. The default is False.
+
+        Returns
+        -------
+        result : TYPE
+            DESCRIPTION.
+
+        """
+                
         z = 1
         if option == 'put':
             z = -1
@@ -599,9 +937,36 @@ class Pricer():
         return result   
     
     
-    @timethis
     def mc(self, S, K, T, r, q, sigma, simulations, option='call'):
-        # Standard Monte Carlo
+        """
+        Standard Monte Carlo
+
+        Parameters
+        ----------
+        S : TYPE
+            DESCRIPTION.
+        K : TYPE
+            DESCRIPTION.
+        T : TYPE
+            DESCRIPTION.
+        r : TYPE
+            DESCRIPTION.
+        q : TYPE
+            DESCRIPTION.
+        sigma : TYPE
+            DESCRIPTION.
+        simulations : TYPE
+            DESCRIPTION.
+        option : TYPE, optional
+            DESCRIPTION. The default is 'call'.
+
+        Returns
+        -------
+        result : TYPE
+            DESCRIPTION.
+
+        """
+         
         b = r - q
         Drift = (b - (sigma ** 2) / 2) * T
         sigmarT = sigma * np.sqrt(T)
@@ -620,10 +985,38 @@ class Pricer():
         return result
     
     
-    @timethis
     def mcgreeks(self, S, K, T, r, q, sigma, simulations, option='call', output_flag='price'):
-        # Standard Monte Carlo with Greeks
-        
+        """
+        Standard Monte Carlo with Greeks
+
+        Parameters
+        ----------
+        S : TYPE
+            DESCRIPTION.
+        K : TYPE
+            DESCRIPTION.
+        T : TYPE
+            DESCRIPTION.
+        r : TYPE
+            DESCRIPTION.
+        q : TYPE
+            DESCRIPTION.
+        sigma : TYPE
+            DESCRIPTION.
+        simulations : TYPE
+            DESCRIPTION.
+        option : TYPE, optional
+            DESCRIPTION. The default is 'call'.
+        output_flag : TYPE, optional
+            DESCRIPTION. The default is 'price'.
+
+        Returns
+        -------
+        result : TYPE
+            DESCRIPTION.
+
+        """
+                
         b = r - q
         Drift = (b - (sigma ** 2) / 2) * T
         sigmarT = sigma * np.sqrt(T)
@@ -681,9 +1074,36 @@ class Pricer():
         return result
     
     
-    @timethis
     def hw87sv(self, S, K, T, r, q, sigma, vvol, option='call'):
-        # Hull White 1987 Stochastic Volatility
+        """
+        Hull White 1987 Stochastic Volatility.
+
+        Parameters
+        ----------
+        S : TYPE
+            DESCRIPTION.
+        K : TYPE
+            DESCRIPTION.
+        T : TYPE
+            DESCRIPTION.
+        r : TYPE
+            DESCRIPTION.
+        q : TYPE
+            DESCRIPTION.
+        sigma : TYPE
+            DESCRIPTION.
+        vvol : TYPE
+            DESCRIPTION.
+        option : TYPE, optional
+            DESCRIPTION. The default is 'call'.
+
+        Returns
+        -------
+        result : Float
+            Option price.
+
+        """
+        
         b = r - q
         
         k = vvol ** 2 * T
@@ -713,8 +1133,21 @@ class Pricer():
 
 
     def cd(self, R):
-        # Cholesky Decomposition
-        
+        """
+        Cholesky Decomposition.
+
+        Parameters
+        ----------
+        R : Array
+            Correlation matrix.
+
+        Returns
+        -------
+        M : Array
+            DESCRIPTION.
+
+        """
+                
         # Number of columns in input correlation matrix R
         n = len(R[0])
         
@@ -753,12 +1186,34 @@ class SABRVolatility():
         
         
     def calibrate(self):
+        """
+        
+
+        Returns
+        -------
+        TYPE
+            DESCRIPTION.
+
+        """
         return self._alphasabr(self._findalpha())
     
     
     def _alphasabr(self, Alpha):
-        # The SABR skew vol function
-        
+        """
+        The SABR skew vol function
+
+        Parameters
+        ----------
+        Alpha : TYPE
+            DESCRIPTION.
+
+        Returns
+        -------
+        result : TYPE
+            DESCRIPTION.
+
+        """
+                
         dSABR = np.zeros(4)
         dSABR[1] = (Alpha / ((self.F * self.X) ** ((1 - self.Beta) / 2) * (1 + (((1 - self.Beta) ** 2) / 24) * 
                     (np.log(self.F / self.X) ** 2) + ((1 - self.Beta) ** 4 / 1920) * (np.log(self.F / self.X) ** 4))))
@@ -785,6 +1240,15 @@ class SABRVolatility():
     
     
     def _findalpha(self):
+        """
+        
+
+        Returns
+        -------
+        result : TYPE
+            DESCRIPTION.
+
+        """
         # Alpha is a function of atm vol etc
         
         result = self._croot((1 - self.Beta) ** 2 * self.T / (24 * self.F **(2 - 2 * self.Beta)), 
@@ -796,7 +1260,26 @@ class SABRVolatility():
     
     
     def _croot(self, cubic, quadratic, linear, constant):
+        """
         
+
+        Parameters
+        ----------
+        cubic : TYPE
+            DESCRIPTION.
+        quadratic : TYPE
+            DESCRIPTION.
+        linear : TYPE
+            DESCRIPTION.
+        constant : TYPE
+            DESCRIPTION.
+
+        Returns
+        -------
+        result : TYPE
+            DESCRIPTION.
+
+        """
         a = quadratic / cubic
         b = linear / cubic
         C = constant / cubic
@@ -840,6 +1323,20 @@ class SABRVolatility():
     
     
     def _arccos(self, y):
+        """
+        
+
+        Parameters
+        ----------
+        y : TYPE
+            DESCRIPTION.
+
+        Returns
+        -------
+        result : TYPE
+            DESCRIPTION.
+
+        """
         result = np.arctan(-y / np.sqrt(-y * y + 1)) + 2 * np.arctan(1)
         
         return result
@@ -852,11 +1349,37 @@ class ImpliedVol(Pricer):
         super().__init__(self)
 
 
-    @timethis
     def newtonraphson(self, S, K, T, r, q, cm, epsilon, option):
-        # Newton-Raphson method - needs knowledge of partial derivative of option 
-        # pricing formula with respect to volatility (vega)
-        
+        """
+        Finds implied volatility using Newton-Raphson method - needs knowledge of 
+        partial derivative of option pricing formula with respect to volatility (vega)
+
+        Parameters
+        ----------
+        S : TYPE
+            DESCRIPTION.
+        K : TYPE
+            DESCRIPTION.
+        T : TYPE
+            DESCRIPTION.
+        r : TYPE
+            DESCRIPTION.
+        q : TYPE
+            DESCRIPTION.
+        cm : TYPE
+            DESCRIPTION.
+        epsilon : TYPE
+            DESCRIPTION.
+        option : TYPE
+            DESCRIPTION.
+
+        Returns
+        -------
+        result : TYPE
+            DESCRIPTION.
+
+        """
+                
         # Manaster and Koehler seed value
         vi = np.sqrt(abs(np.log(S / K) + r * T) * 2 / T)
         ci = self.bsm(S, K, T, r, q, vi, option)    
@@ -877,8 +1400,35 @@ class ImpliedVol(Pricer):
         return result
     
     
-    @timethis
     def bisection(self, S, K, T, r, q, cm, epsilon, option):
+        """
+        Finds implied volatility using bisection method.
+
+        Parameters
+        ----------
+        S : TYPE
+            DESCRIPTION.
+        K : TYPE
+            DESCRIPTION.
+        T : TYPE
+            DESCRIPTION.
+        r : TYPE
+            DESCRIPTION.
+        q : TYPE
+            DESCRIPTION.
+        cm : TYPE
+            DESCRIPTION.
+        epsilon : TYPE
+            DESCRIPTION.
+        option : TYPE
+            DESCRIPTION.
+
+        Returns
+        -------
+        result : TYPE
+            DESCRIPTION.
+
+        """
         vLow = 0.005
         vHigh = 4
         #epsilon = 1e-08
@@ -906,9 +1456,37 @@ class ImpliedVol(Pricer):
             
         return result
 
-    @timethis
+   
     def iv_naive(self, S, K, T, r, q, cm, epsilon, option):
-    
+        """
+        Finds implied volatility using simple naive iteration, increasing precision 
+        each time the difference changes sign.
+
+        Parameters
+        ----------
+        S : TYPE
+            DESCRIPTION.
+        K : TYPE
+            DESCRIPTION.
+        T : TYPE
+            DESCRIPTION.
+        r : TYPE
+            DESCRIPTION.
+        q : TYPE
+            DESCRIPTION.
+        cm : TYPE
+            DESCRIPTION.
+        epsilon : TYPE
+            DESCRIPTION.
+        option : TYPE
+            DESCRIPTION.
+
+        Returns
+        -------
+        vi : TYPE
+            DESCRIPTION.
+
+        """
         vi = 0.2
         ci = self.bsm(S=S, K=K, T=T, r=r, q=q, sigma=vi, option=option)
         price_diff = cm - ci
@@ -937,6 +1515,5 @@ class ImpliedVol(Pricer):
         return vi
 
 
-#%%
 
 
