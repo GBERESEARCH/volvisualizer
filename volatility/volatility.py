@@ -303,6 +303,11 @@ class Volatility(models.ImpliedVol):
         None.
 
         """
+        
+        self.graphtype = graphtype
+        self.smoothing = smoothing
+        self.notebook = notebook
+        
         if type == 'line':
             self.line_graph()
         if type == 'scatter':
@@ -326,7 +331,7 @@ class Volatility(models.ImpliedVol):
         tenors.sort()
         tenor_date_dict = dict(zip(dates, tenors))
                 
-        fig, ax = plt.subplots()
+        fig, ax = plt.subplots(figsize=(12,9))
         plt.style.use('seaborn-darkgrid')
         for exp_date, tenor in tenor_date_dict.items():
                 ax.plot(self.imp_vol_data[self.imp_vol_data['TTM']==tenor]['Strike'], 
@@ -379,23 +384,26 @@ class Volatility(models.ImpliedVol):
         None.
 
         """
-        self.notebook = notebook
-        self.graphtype = graphtype
-        self.smoothing = smoothing
+        if notebook is None:
+            notebook = self.notebook
+        if graphtype is None:
+            graphtype = self.graphtype
+        if smoothing is None:
+            smoothing = self.smoothing
         
         
-        if self.smoothing == False:
+        if smoothing == False:
             self.data_3D = self.imp_vol_data.copy()
+            self.data_3D['Graph Vol'] = self.data_3D['Imp Vol - Last']
         else:
             self.data_3D = self.imp_vol_data_smoothed.copy()
-            self.data_3D = self.data_3D.drop(['Imp Vol - Last'], axis=1)
-            self.data_3D = self.data_3D.rename(columns={'Smoothed Vol':'Imp Vol - Last'})
+            self.data_3D['Graph Vol'] = self.data_3D['Smoothed Vol']
         
         x = self.data_3D['Strike']
         y = self.data_3D['TTM'] * 365
-        z = self.data_3D['Imp Vol - Last'] * 100
+        z = self.data_3D['Graph Vol'] * 100
         
-        if self.graphtype == 'trisurf':
+        if graphtype == 'trisurf':
         
             fig = plt.figure(figsize=(12, 9))
             ax = fig.add_subplot(111, projection='3d')
@@ -405,21 +413,22 @@ class Volatility(models.ImpliedVol):
             ax.set_title(str(self.ticker_label.upper())+' Implied Volatility '+str(self.start_date), fontsize=14)
             ax.plot_trisurf(x, y, z, cmap='viridis', edgecolor='none')
 
-        if self.graphtype == 'mesh':
+        if graphtype == 'mesh':
     
             x1,y1 = np.meshgrid(np.linspace(min(x), max(x), 1000), np.linspace(min(y), max(y), 1000))
             z1 = griddata(np.array([x,y]).T, np.array(z), (x1,y1), method='cubic')
-            fig = plt.figure()
-            ax = Axes3D(fig, azim = -29, elev = 50)
+            fig = plt.figure(figsize=(12, 9))
+            ax = Axes3D(fig, azim=-60, elev=30)
             ax.plot_surface(x1,y1,z1)
             ax.contour(x1,y1,z1)
             ax.set_xlabel('Strike', fontsize=12)
             ax.set_ylabel('Time To Maturity - Days', fontsize=12)
             ax.set_zlabel('Implied Volatility %', fontsize=12)
+            ax.set_title(str(self.ticker_label.upper())+' Implied Volatility '+str(self.start_date), fontsize=14)
             plt.show()
 
 
-        if self.graphtype == 'interactive':
+        if graphtype == 'interactive':
 
             contour_x_start = 0
             contour_x_stop = 2 * 360
@@ -440,7 +449,7 @@ class Volatility(models.ImpliedVol):
             
             x = self.data_3D['TTM'] * 365
             y = self.data_3D['Strike']
-            z = self.data_3D['Imp Vol - Last'] * 100
+            z = self.data_3D['Graph Vol'] * 100
             
             x1 = np.linspace(x.min(), x.max(), 1000)
             y1 = np.linspace(y.min(), y.max(), 1000)
