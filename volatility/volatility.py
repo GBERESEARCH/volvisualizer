@@ -9,14 +9,57 @@ import pytz
 from datetime import date
 from collections import Counter
 import plotly.graph_objects as go
+import scipy as sp
 from scipy.interpolate import griddata
 from plotly.offline import plot
 
+df_dict = {'vols_dict':{'bid':'Imp Vol - Bid',
+                        'mid':'Imp Vol - Mid',
+                        'ask':'Imp Vol - Ask',
+                        'last':'Imp Vol - Last'},
+           'row_dict':{'Last Price':'Imp Vol - Last', 
+                       'Mid':'Imp Vol - Mid', 
+                       'Bid':'Imp Vol - Bid', 
+                       'Ask':'Imp Vol - Ask'},
+           'method_dict':{'NR':'newtonraphson',
+                          'Bisection':'bisection',
+                          'Naive':'iv_naive'},
+           'graphtype':'line', 
+           'surfacetype':'mesh', 
+           'smoothing':False, 
+           'scatter':False, 
+           'voltype':'last', 
+           'notebook':False,
+           'r':0.005, 
+           'q':0, 
+           'epsilon':0.001, 
+           'method':'NR',
+           'order':3,
+           'spacegrain':100}
 
 class Volatility(models.ImpliedVol):
     
-    def __init__(self):
+    def __init__(self, vols_dict=df_dict['vols_dict'], row_dict=df_dict['row_dict'], 
+                 method_dict=df_dict['method_dict'], graphtype=df_dict['graphtype'], 
+                 surfacetype=df_dict['surfacetype'], smoothing=df_dict['smoothing'], 
+                 scatter=df_dict['scatter'], voltype=df_dict['voltype'], notebook=df_dict['notebook'], 
+                 r=df_dict['r'], q=df_dict['q'], epsilon=df_dict['epsilon'], method=df_dict['method'], 
+                 order=df_dict['order'], spacegrain=df_dict['spacegrain']):
         models.ImpliedVol.__init__(self)
+        self.vols_dict = vols_dict
+        self.row_dict = row_dict
+        self.method_dict = method_dict
+        self.surfacetype = surfacetype
+        self.smoothing = smoothing
+        self.scatter = scatter
+        self.voltype = voltype
+        self.notebook = notebook
+        self.r = r
+        self.q = q
+        self.epsilon = epsilon
+        self.method = method
+        self.order = order
+        self.spacegrain = spacegrain
         
         
     def extract(self, url_dict):
@@ -115,16 +158,10 @@ class Volatility(models.ImpliedVol):
             DESCRIPTION.
 
         """
-        row_dict = {'Last Price':'Imp Vol - Last', 
-                    'Mid':'Imp Vol - Mid', 
-                    'Bid':'Imp Vol - Bid', 
-                    'Ask':'Imp Vol - Ask'}
-        method_dict = {'NR':'newtonraphson',
-                       'Bisection':'bisection',
-                       'Naive':'iv_naive'}
-        for flag, func_name in method_dict.items():
+
+        for flag, func_name in self.method_dict.items():
             if method == flag:
-                for input_row, output_row in row_dict.items():
+                for input_row, output_row in self.row_dict.items():
                     row[output_row] = getattr(self, func_name)(S=S, K=K, T=row['TTM'], 
                                                                r=r, q=q, cm=row[input_row], 
                                                                epsilon=epsilon, option=option)
@@ -168,7 +205,7 @@ class Volatility(models.ImpliedVol):
     
     
     def combine(self, ticker_label, put_strikes, call_strikes, spot, 
-                r=0.005, q=0, epsilon=0.001, method='NR'):
+                r=None, q=None, epsilon=None, method=None):
         """
         
 
@@ -197,6 +234,16 @@ class Volatility(models.ImpliedVol):
             DESCRIPTION.
 
         """
+        
+        if r is None:
+            r = self.r
+        if q is None:
+            q = self.q
+        if epsilon is None:
+            epsilon = self.epsilon
+        if method is None:
+            method = self.method
+        
         input_data = self.data.copy()
         self.ticker_label = ticker_label
         self.opt_list = []
@@ -240,7 +287,7 @@ class Volatility(models.ImpliedVol):
         return row
        
     
-    def smooth(self, order=3):
+    def smooth(self, order=None, voltype='last'):
         """
         
 
@@ -255,6 +302,11 @@ class Volatility(models.ImpliedVol):
             DESCRIPTION.
 
         """
+        
+        if order is None:
+            order = self.order
+        
+        self.voltype = voltype
         self.mat_dict = dict(Counter(self.imp_vol_data['Days']))
         self.maturities = sorted(list(set(self.imp_vol_data['Days'])))
         self.strikes_full = sorted(list(set((self.imp_vol_data['Strike'].astype(int)))))
@@ -270,7 +322,7 @@ class Volatility(models.ImpliedVol):
 
         for maturity in reversed(self.maturities):
             strikes = self.imp_vol_data[self.imp_vol_data['Days']==maturity]['Strike']
-            vols = self.imp_vol_data[self.imp_vol_data['Days']==maturity]['Imp Vol - Last']
+            vols = self.imp_vol_data[self.imp_vol_data['Days']==maturity][str(self.vols_dict[str(self.voltype)])]
             curve_fit = np.polyfit(strikes, vols, order)
             p = np.poly1d(curve_fit)
             iv_new = []
@@ -283,18 +335,23 @@ class Volatility(models.ImpliedVol):
         return self
 
     
-    def visualize(self, type='line', graphtype='mesh', smoothing=False, notebook=False):
+    def visualize(self, graphtype=None, surfacetype=None, smoothing=None, scatter=None, 
+                  voltype=None, notebook=None):
         """
         
 
         Parameters
         ----------
-        type : TYPE, optional
+        graphtype : TYPE, optional
             DESCRIPTION. The default is 'line'.
+        surfacetype : TYPE, optional
+            DESCRIPTION. The default is 'mesh'.
         smoothing : TYPE, optional
             DESCRIPTION. The default is False.
-        interactive : TYPE, optional
+        scatter : TYPE, optional
             DESCRIPTION. The default is False.
+        voltype : TYPE, optional
+            DESCRIPTION. The default is 'last'.
         notebook : TYPE, optional
             DESCRIPTION. The default is False.
 
@@ -304,27 +361,57 @@ class Volatility(models.ImpliedVol):
 
         """
         
-        self.graphtype = graphtype
-        self.smoothing = smoothing
-        self.notebook = notebook
+        if graphtype is None:
+            graphtype = self.graphtype
+        else:
+            self.graphtype = graphtype 
+        if surfacetype is None:
+            surfacetype = self.surfacetype
+        else:
+            self.surfacetype = surfacetype            
+        if smoothing is None:
+            smoothing = self.smoothing
+        else:
+            self.smoothing = smoothing
+        if scatter is None:
+            scatter = self.scatter
+        else:
+            self.scatter = scatter
+        if voltype == None:
+            voltype = self.voltype    
+        else:
+            self.voltype = voltype
+        if notebook is None:
+            notebook = self.notebook
+        else:
+            self.notebook = notebook
         
-        if type == 'line':
-            self.line_graph()
-        if type == 'scatter':
-            self.scatter_3D()
-        if type == 'surface':
-            self.surface_3D(graphtype=graphtype, notebook=notebook)
+        if graphtype == 'line':
+            self.line_graph(voltype=voltype)
+        if graphtype == 'scatter':
+            self.scatter_3D(voltype=voltype)
+        if graphtype == 'surface':
+            self.surface_3D(surfacetype=surfacetype, scatter=scatter, voltype=voltype, notebook=notebook)
             
     
-    def line_graph(self):
+    def line_graph(self, voltype=None):
         """
         
+
+        Parameters
+        ----------
+        voltype : TYPE, optional
+            DESCRIPTION. The default is None.
 
         Returns
         -------
         None.
 
         """
+        
+        if voltype == None:
+            voltype = self.voltype
+        
         dates = list(set(self.imp_vol_data['Expiry']))
         dates.sort()
         tenors = list(set(self.imp_vol_data['TTM']))
@@ -335,67 +422,98 @@ class Volatility(models.ImpliedVol):
         plt.style.use('seaborn-darkgrid')
         for exp_date, tenor in tenor_date_dict.items():
                 ax.plot(self.imp_vol_data[self.imp_vol_data['TTM']==tenor]['Strike'], 
-                        self.imp_vol_data[self.imp_vol_data['TTM']==tenor]['Imp Vol - Last'] * 100, 
+                        self.imp_vol_data[self.imp_vol_data['TTM']==tenor][str(self.vols_dict[str(voltype)])] * 100, 
                         label=str(exp_date)+' Expiry')
         plt.grid(True)
-        ax.set(xlabel='Strike', ylabel='Implied Vol', title=str(self.ticker_label.upper())+' Implied Vol '+str(self.start_date))
+        ax.set_xlabel('Strike', fontsize=12)
+        ax.set_ylabel('Implied Volatility %', fontsize=12)
+        ax.set_title(str(self.ticker_label.upper())+' Implied Volatility '+str(voltype.title())+
+                     ' Price '+str(self.start_date), fontsize=14)
         ax.legend()
         plt.show()
 
 
-    def scatter_3D(self):
-        """
-        
-
-        Returns
-        -------
-        None.
-
-        """
-        fig = plt.figure(figsize=(12, 9))
-        ax = fig.add_subplot(111, projection='3d')
-        x = self.imp_vol_data['Strike']
-        y = self.imp_vol_data['TTM'] * 365
-        z = self.imp_vol_data['Imp Vol - Last'] * 100
-        
-        ax.set_xlabel('Strike', fontsize=12)
-        ax.set_ylabel('Time To Maturity - Days', fontsize=12)
-        ax.set_zlabel('Implied Volatility %', fontsize=12)
-        ax.set_title(str(self.ticker_label.upper())+' Implied Volatility '+str(self.start_date), fontsize=14)
-       
-        ax.scatter3D(x, y, z, c=z, cmap='viridis')
-    
-
-    def surface_3D(self, graphtype=None, smoothing=None, notebook=None):
+    def scatter_3D(self, voltype=None):
         """
         
 
         Parameters
         ----------
-        smoothing : TYPE, optional
-            DESCRIPTION. The default is False.
-        interactive : TYPE, optional
-            DESCRIPTION. The default is False.
-        notebook : TYPE, optional
-            DESCRIPTION. The default is False.
+        voltype : TYPE, optional
+            DESCRIPTION. The default is None.
 
         Returns
         -------
         None.
 
         """
+        
+        if voltype == None:
+            voltype = self.voltype
+        
+        fig = plt.figure(figsize=(12, 9))
+        ax = fig.add_subplot(111, projection='3d')
+        x = self.imp_vol_data['Strike']
+        y = self.imp_vol_data['TTM'] * 365
+        z = self.imp_vol_data[str(self.vols_dict[str(voltype)])] * 100
+        
+        ax.set_xlabel('Strike', fontsize=12)
+        ax.set_ylabel('Time To Maturity - Days', fontsize=12)
+        ax.set_zlabel('Implied Volatility %', fontsize=12)
+        ax.set_title(str(self.ticker_label.upper())+' Implied Volatility '+str(voltype.title())+
+                     ' Price '+str(self.start_date), fontsize=14)       
+        ax.scatter3D(x, y, z, c=z, cmap='viridis')
+    
+
+    def surface_3D(self, surfacetype=None, smoothing=None, scatter=None, voltype=None, 
+                   order=None, spacegrain=None, notebook=None):
+        """
+        
+
+        Parameters
+        ----------
+        surfacetype : TYPE, optional
+            DESCRIPTION. The default is None.
+        smoothing : TYPE, optional
+            DESCRIPTION. The default is None.
+        scatter : TYPE, optional
+            DESCRIPTION. The default is None.
+        voltype : TYPE, optional
+            DESCRIPTION. The default is None.
+        order : TYPE, optional
+            DESCRIPTION. The default is None.
+        spacegrain : TYPE, optional
+            DESCRIPTION. The default is None.
+        notebook : TYPE, optional
+            DESCRIPTION. The default is None.
+
+        Returns
+        -------
+        None.
+
+        """
+        
         if notebook is None:
             notebook = self.notebook
-        if graphtype is None:
-            graphtype = self.graphtype
+        if surfacetype is None:
+            surfacetype = self.surfacetype
         if smoothing is None:
             smoothing = self.smoothing
+        if scatter is None:
+            scatter = self.scatter
+        if voltype == None:
+            voltype = self.voltype    
+        if order == None:
+            order = self.order 
+        if spacegrain == None:
+            spacegrain = self.spacegrain    
         
         
         if smoothing == False:
             self.data_3D = self.imp_vol_data.copy()
-            self.data_3D['Graph Vol'] = self.data_3D['Imp Vol - Last']
+            self.data_3D['Graph Vol'] = self.data_3D[str(self.vols_dict[str(voltype)])]
         else:
+            self.smooth(order=order, voltype=voltype)
             self.data_3D = self.imp_vol_data_smoothed.copy()
             self.data_3D['Graph Vol'] = self.data_3D['Smoothed Vol']
         
@@ -403,19 +521,23 @@ class Volatility(models.ImpliedVol):
         y = self.data_3D['TTM'] * 365
         z = self.data_3D['Graph Vol'] * 100
         
-        if graphtype == 'trisurf':
+        
+        if surfacetype == 'trisurf':
         
             fig = plt.figure(figsize=(12, 9))
             ax = fig.add_subplot(111, projection='3d')
             ax.set_xlabel('Strike', fontsize=12)
             ax.set_ylabel('Time To Maturity - Days', fontsize=12)
             ax.set_zlabel('Implied Volatility %', fontsize=12)
-            ax.set_title(str(self.ticker_label.upper())+' Implied Volatility '+str(self.start_date), fontsize=14)
+            ax.set_title(str(self.ticker_label.upper())+' Implied Volatility '+str(voltype.title())+
+                     ' Price '+str(self.start_date), fontsize=14) 
             ax.plot_trisurf(x, y, z, cmap='viridis', edgecolor='none')
 
-        if graphtype == 'mesh':
+
+        if surfacetype == 'mesh':
     
-            x1,y1 = np.meshgrid(np.linspace(min(x), max(x), 1000), np.linspace(min(y), max(y), 1000))
+            x1,y1 = np.meshgrid(np.linspace(min(x), max(x), int(self.spacegrain)), 
+                                np.linspace(min(y), max(y), int(self.spacegrain)))
             z1 = griddata(np.array([x,y]).T, np.array(z), (x1,y1), method='cubic')
             fig = plt.figure(figsize=(12, 9))
             ax = Axes3D(fig, azim=-60, elev=30)
@@ -424,11 +546,35 @@ class Volatility(models.ImpliedVol):
             ax.set_xlabel('Strike', fontsize=12)
             ax.set_ylabel('Time To Maturity - Days', fontsize=12)
             ax.set_zlabel('Implied Volatility %', fontsize=12)
-            ax.set_title(str(self.ticker_label.upper())+' Implied Volatility '+str(self.start_date), fontsize=14)
+            ax.set_title(str(self.ticker_label.upper())+' Implied Volatility '+str(voltype.title())+
+                     ' Price '+str(self.start_date), fontsize=14) 
             plt.show()
 
 
-        if graphtype == 'interactive':
+        if surfacetype == 'spline':
+ 
+            x1 = np.linspace(min(x), max(x), int(self.spacegrain))
+            y1 = np.linspace(min(y), max(y), int(self.spacegrain))
+            x2, y2 = np.meshgrid(x1, y1, indexing='xy')
+            z2 = np.zeros((x.size, z.size))
+            
+            spline = sp.interpolate.Rbf(x, y, z, function='thin_plate', smooth=5, episilon=5)
+            
+            z2 = spline(x2, y2)
+            fig = plt.figure(figsize=(12,9))
+            ax = Axes3D(fig)
+            ax.set_xlabel('Strike', fontsize=12)
+            ax.set_ylabel('Time To Maturity - Days', fontsize=12)
+            ax.set_zlabel('Implied Volatility %', fontsize=12)
+            ax.set_title(str(self.ticker_label.upper())+' Implied Volatility '+str(voltype.title())+
+                     ' Price '+str(self.start_date), fontsize=14) 
+            ax.plot_wireframe(x2, y2, z2)
+            ax.plot_surface(x2, y2, z2, alpha=0.2)
+            if scatter == True:
+                ax.scatter3D(x, y, z, c='r')
+
+
+        if surfacetype in ['interactive_mesh', 'interactive_spline']:
 
             contour_x_start = 0
             contour_x_stop = 2 * 360
@@ -451,11 +597,17 @@ class Volatility(models.ImpliedVol):
             y = self.data_3D['Strike']
             z = self.data_3D['Graph Vol'] * 100
             
-            x1 = np.linspace(x.min(), x.max(), 1000)
-            y1 = np.linspace(y.min(), y.max(), 1000)
-            x2, y2 = np.meshgrid(x1, y1)
-            z2 = griddata((x, y), z, (x2, y2), method='cubic')
+            x1 = np.linspace(x.min(), x.max(), int(self.spacegrain))
+            y1 = np.linspace(y.min(), y.max(), int(self.spacegrain))
+            x2, y2 = np.meshgrid(x1, y1, indexing='xy')
+        
+            if surfacetype == 'interactive_mesh':
+                z2 = griddata((x, y), z, (x2, y2), method='cubic')
             
+            if surfacetype == 'interactive_spline':
+                z2 = np.zeros((x.size, z.size))
+                spline = sp.interpolate.Rbf(x, y, z, function='thin_plate', smooth=5, episilon=5)
+                z2 = spline(x2, y2)
             
             fig = go.Figure(data=[go.Surface(x=x2, 
                                              y=y2, 
@@ -493,7 +645,8 @@ class Volatility(models.ImpliedVol):
                                 xaxis_title='Time to Expiration (Days)',
                                 yaxis_title='Underlying Value',
                                 zaxis_title='Implied Vol',),
-                              title='Implied Vol '+str(self.ticker_label.upper())+' '+str(self.start_date), 
+                              title=(str(self.ticker_label.upper())+' Implied Volatility '+str(voltype.title())+
+                                     ' Price '+str(self.start_date)), 
                               autosize=False, 
                               width=800, height=800,
                               margin=dict(l=65, r=50, b=65, t=90),
