@@ -2,6 +2,7 @@ import models as models
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
+from mpl_toolkits.mplot3d import Axes3D
 import requests
 import time
 import pytz
@@ -282,7 +283,7 @@ class Volatility(models.ImpliedVol):
         return self
 
     
-    def visualize(self, type='line', smoothing=False, interactive=False, notebook=False):
+    def visualize(self, type='line', graphtype='mesh', smoothing=False, notebook=False):
         """
         
 
@@ -307,7 +308,7 @@ class Volatility(models.ImpliedVol):
         if type == 'scatter':
             self.scatter_3D()
         if type == 'surface':
-            self.surface_3D(smoothing=smoothing, interactive=interactive, notebook=notebook)
+            self.surface_3D(graphtype=graphtype, notebook=notebook)
             
     
     def line_graph(self):
@@ -360,7 +361,7 @@ class Volatility(models.ImpliedVol):
         ax.scatter3D(x, y, z, c=z, cmap='viridis')
     
 
-    def surface_3D(self, smoothing=False, interactive=False, notebook=False):
+    def surface_3D(self, graphtype=None, smoothing=None, notebook=None):
         """
         
 
@@ -379,31 +380,46 @@ class Volatility(models.ImpliedVol):
 
         """
         self.notebook = notebook
-        self.interactive = interactive
+        self.graphtype = graphtype
+        self.smoothing = smoothing
         
-        if smoothing == False:
+        
+        if self.smoothing == False:
             self.data_3D = self.imp_vol_data.copy()
-        if smoothing == True:
+        else:
             self.data_3D = self.imp_vol_data_smoothed.copy()
             self.data_3D = self.data_3D.drop(['Imp Vol - Last'], axis=1)
             self.data_3D = self.data_3D.rename(columns={'Smoothed Vol':'Imp Vol - Last'})
         
-        if self.interactive == False:
+        x = self.data_3D['Strike']
+        y = self.data_3D['TTM'] * 365
+        z = self.data_3D['Imp Vol - Last'] * 100
+        
+        if self.graphtype == 'trisurf':
         
             fig = plt.figure(figsize=(12, 9))
             ax = fig.add_subplot(111, projection='3d')
-            x = self.data_3D['Strike']
-            y = self.data_3D['TTM']
-            z = self.data_3D['Imp Vol - Last']
-            #ax.invert_xaxis()
             ax.set_xlabel('Strike', fontsize=12)
             ax.set_ylabel('Time To Maturity - Days', fontsize=12)
             ax.set_zlabel('Implied Volatility %', fontsize=12)
             ax.set_title(str(self.ticker_label.upper())+' Implied Volatility '+str(self.start_date), fontsize=14)
+            ax.plot_trisurf(x, y, z, cmap='viridis', edgecolor='none')
 
-            ax.plot_trisurf(x, y*365, z*100, cmap='viridis', edgecolor='none')
+        if self.graphtype == 'mesh':
+    
+            x1,y1 = np.meshgrid(np.linspace(min(x), max(x), 1000), np.linspace(min(y), max(y), 1000))
+            z1 = griddata(np.array([x,y]).T, np.array(z), (x1,y1), method='cubic')
+            fig = plt.figure()
+            ax = Axes3D(fig, azim = -29, elev = 50)
+            ax.plot_surface(x1,y1,z1)
+            ax.contour(x1,y1,z1)
+            ax.set_xlabel('Strike', fontsize=12)
+            ax.set_ylabel('Time To Maturity - Days', fontsize=12)
+            ax.set_zlabel('Implied Volatility %', fontsize=12)
+            plt.show()
 
-        if self.interactive == True:
+
+        if self.graphtype == 'interactive':
 
             contour_x_start = 0
             contour_x_stop = 2 * 360
@@ -422,19 +438,19 @@ class Volatility(models.ImpliedVol):
             contour_z_stop = 0.5
             contour_z_size = 0.05
             
-            x = self.data_3D['TTM']
+            x = self.data_3D['TTM'] * 365
             y = self.data_3D['Strike']
-            z = self.data_3D['Imp Vol - Last']
+            z = self.data_3D['Imp Vol - Last'] * 100
             
-            x1 = np.linspace(x.min(), x.max(), len(x.unique()))
-            y1 = np.linspace(y.min(), y.max(), len(y.unique()))
+            x1 = np.linspace(x.min(), x.max(), 1000)
+            y1 = np.linspace(y.min(), y.max(), 1000)
             x2, y2 = np.meshgrid(x1, y1)
             z2 = griddata((x, y), z, (x2, y2), method='cubic')
             
             
-            fig = go.Figure(data=[go.Surface(x=x2 * 365, 
+            fig = go.Figure(data=[go.Surface(x=x2, 
                                              y=y2, 
-                                             z=z2 * 100, 
+                                             z=z2, 
                                              colorscale='BlueRed', 
                                              contours = {"x": {"show": True, "start": contour_x_start, 
                                                                "end": contour_x_stop, "size": contour_x_size, "color":"white"},            
