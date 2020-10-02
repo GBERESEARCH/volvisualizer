@@ -531,8 +531,10 @@ class Volatility(models.ImpliedVol):
         tenor_date_dict = dict(zip(dates, tenors))
         
         # Create figure, axis objects        
-        fig, ax = plt.subplots(figsize=(12,9))
+        fig, ax = plt.subplots(figsize=(14,12))
         plt.style.use('seaborn-darkgrid')
+        # Set fontsize of axis ticks
+        ax.tick_params(axis='both', which='major', labelsize=14)
         # For each expiry date
         for exp_date, tenor in tenor_date_dict.items():
             # Plot the specified voltype against strike
@@ -541,12 +543,15 @@ class Volatility(models.ImpliedVol):
                     label=str(exp_date)+' Expiry')
         plt.grid(True)
         # Label axes 
-        ax.set_xlabel('Strike', fontsize=12)
-        ax.set_ylabel('Implied Volatility %', fontsize=12)
-        # Specify title with ticker label, voltype and date
-        ax.set_title(str(self.ticker_label.upper())+' Implied Volatility '+str(voltype.title())+
-                     ' Price '+str(self.start_date), fontsize=14)
-        ax.legend()
+        ax.set_xlabel('Strike', fontsize=14)
+        ax.set_ylabel('Implied Volatility %', fontsize=14)
+        # Set legend title and font sizes
+        ax.legend(title="Option Expiry", fontsize=12, title_fontsize=15)
+        # Specify title with ticker label, voltype and date and shift away from chart
+        st = fig.suptitle(str(self.ticker_label.upper())+' Implied Volatility '+str(voltype.title())+
+                     ' Price '+str(self.start_date), fontsize=18, fontweight=0, color='black', style='italic', y=1.02)
+        st.set_y(0.95)
+        fig.subplots_adjust(top=0.9)
         # Display graph
         plt.show()
 
@@ -571,20 +576,22 @@ class Volatility(models.ImpliedVol):
             voltype = self.voltype
         
         # Create figure and axis objects
-        fig = plt.figure(figsize=(12, 9))
+        fig = plt.figure(figsize=(15, 12))
         ax = fig.add_subplot(111, projection='3d')
+        # Set fontsize of axis ticks
+        ax.tick_params(axis='both', which='major', labelsize=14)
         # Specify the 3 axis values
         x = self.imp_vol_data['Strike']
         y = self.imp_vol_data['TTM'] * 365
         z = self.imp_vol_data[str(self.vols_dict[str(voltype)])] * 100
         
         # Label axes
-        ax.set_xlabel('Strike', fontsize=12)
-        ax.set_ylabel('Time To Maturity - Days', fontsize=12)
-        ax.set_zlabel('Implied Volatility %', fontsize=12)
+        ax.set_xlabel('Strike', fontsize=14, labelpad=15)
+        ax.set_ylabel('Time To Maturity - Days', fontsize=14, labelpad=15)
+        ax.set_zlabel('Implied Volatility %', fontsize=14, labelpad=15)
         # Specify title with ticker label, voltype and date
         ax.set_title(str(self.ticker_label.upper())+' Implied Volatility '+str(voltype.title())+
-                     ' Price '+str(self.start_date), fontsize=14)       
+                     ' Price '+str(self.start_date), fontsize=18)       
         # Display scatter, specifying colour to vary with z-axis and use colormap 'viridis'
         ax.scatter3D(x, y, z, c=z, cmap='viridis')
     
@@ -670,15 +677,17 @@ class Volatility(models.ImpliedVol):
         if surfacetype == 'trisurf':
             
             # Create figure and axis objects
-            fig = plt.figure(figsize=(12, 9))
+            fig = plt.figure(figsize=(15, 12))
             ax = fig.add_subplot(111, projection='3d')
+            # Set fontsize of axis ticks
+            ax.tick_params(axis='both', which='major', labelsize=14)
             # Label axes
-            ax.set_xlabel('Strike', fontsize=12)
-            ax.set_ylabel('Time To Maturity - Days', fontsize=12)
-            ax.set_zlabel('Implied Volatility %', fontsize=12)
+            ax.set_xlabel('Strike', fontsize=14, labelpad=15)
+            ax.set_ylabel('Time To Maturity - Days', fontsize=14, labelpad=15)
+            ax.set_zlabel('Implied Volatility %', fontsize=14, labelpad=15)
             # Specify title with ticker label, voltype and date
             ax.set_title(str(self.ticker_label.upper())+' Implied Volatility '+str(voltype.title())+
-                     ' Price '+str(self.start_date), fontsize=14) 
+                     ' Price '+str(self.start_date), fontsize=18) 
             # Display triangular surface plot, using colormap 'viridis'
             ax.plot_trisurf(x, y, z, cmap='viridis', edgecolor='none')
 
@@ -693,14 +702,16 @@ class Volatility(models.ImpliedVol):
             # Create figure and axis objects
             fig = plt.figure(figsize=(12, 9))
             ax = Axes3D(fig, azim=-60, elev=30)
+            # Set fontsize of axis ticks
+            ax.tick_params(axis='both', which='major', labelsize=14)
             # Plot the surface
             ax.plot_surface(x1, y1, z1)
             # Apply contour lines
             ax.contour(x1, y1, z1)
             # Label axes
-            ax.set_xlabel('Strike', fontsize=14)
-            ax.set_ylabel('Time To Maturity - Days', fontsize=14)
-            ax.set_zlabel('Implied Volatility %', fontsize=14)
+            ax.set_xlabel('Strike', fontsize=14, labelpad=15)
+            ax.set_ylabel('Time To Maturity - Days', fontsize=14, labelpad=15)
+            ax.set_zlabel('Implied Volatility %', fontsize=14, labelpad=15)
             # Specify title with ticker label, voltype and date
             ax.set_title(str(self.ticker_label.upper())+' Implied Volatility '+str(voltype.title())+
                      ' Price '+str(self.start_date), fontsize=18) 
@@ -722,18 +733,21 @@ class Volatility(models.ImpliedVol):
             # Create figure and axis objects
             fig = plt.figure(figsize=(12,9))
             ax = Axes3D(fig)
+            # Set fontsize of axis ticks
+            ax.tick_params(axis='both', which='major', labelsize=14)
             # Label axes
-            ax.set_xlabel('Strike', fontsize=12)
-            ax.set_ylabel('Time To Maturity - Days', fontsize=12)
-            ax.set_zlabel('Implied Volatility %', fontsize=12)
+            ax.set_xlabel('Strike', fontsize=14, labelpad=15)
+            ax.set_ylabel('Time To Maturity - Days', fontsize=14, labelpad=15)
+            ax.set_zlabel('Implied Volatility %', fontsize=14, labelpad=15)
             # Specify title with ticker label, voltype and date
             ax.set_title(str(self.ticker_label.upper())+' Implied Volatility '+str(voltype.title())+
-                     ' Price '+str(self.start_date), fontsize=14) 
+                     ' Price '+str(self.start_date), fontsize=18) 
             # Plot the surface
             ax.plot_wireframe(x2, y2, z2)
             ax.plot_surface(x2, y2, z2, alpha=0.2)
-            # If scatter is True, overlay the surface with the scatter points
+            # If scatter is True, overlay the surface with the unsmoothed scatter points
             if scatter == True:
+                z = self.data_3D[str(self.vols_dict[str(voltype)])] * 100
                 ax.scatter3D(x, y, z, c='r')
 
 
@@ -822,8 +836,15 @@ class Volatility(models.ImpliedVol):
                                 yaxis_title='Underlying Value',
                                 zaxis_title='Implied Vol',),
                               # Specify title with ticker label, voltype and date
-                              title=(str(self.ticker_label.upper())+' Implied Volatility '+str(voltype.title())+
-                                     ' Price '+str(self.start_date)), 
+                              title={'text':(str(self.ticker_label.upper())+' Implied Volatility '+str(voltype.title())+
+                                     ' Price '+str(self.start_date)),
+                                     'y':0.9,
+                                     'x':0.5,
+                                     'xanchor':'center',
+                                     'yanchor':'top',
+                                     'font':dict(#family="Courier New, monospace",
+                                               size=20,
+                                               color="black")},
                               autosize=False, 
                               width=800, height=800,
                               margin=dict(l=65, r=50, b=65, t=90),
