@@ -589,7 +589,7 @@ class Volatility(models.ImpliedVol):
         voltype : Str
             Whether to use 'bid', 'mid', 'ask' or 'last' price. The default is 'last'.
         smoothopt : Int    
-            Minimum number of options to fit curve to
+            Minimum number of options to fit curve to. The default is 6.
         
         Returns
         -------
