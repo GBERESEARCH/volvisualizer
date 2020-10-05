@@ -14,6 +14,7 @@ from scipy.interpolate import griddata
 from plotly.offline import plot
 from bs4 import BeautifulSoup
 import datetime as dt
+import calendar
 
 
 # Dictionary of default parameters
@@ -32,6 +33,7 @@ df_dict = {'vols_dict':{'bid':'Imp Vol - Bid',
            'method_dict':{'NR':'newtonraphson',
                           'Bisection':'bisection',
                           'Naive':'iv_naive'},
+           'wait':5,
            'graphtype':'line', 
            'surfacetype':'mesh', 
            'smoothing':False, 
@@ -46,24 +48,26 @@ df_dict = {'vols_dict':{'bid':'Imp Vol - Bid',
            'order':3,
            'spacegrain':100,
            'rbffunc':'thin_plate',
-           'colorscale':'BlueRed'}
+           'colorscale':'BlueRed',
+           'monthlies':False}
 
 class Volatility(models.ImpliedVol):
     
     def __init__(self, vols_dict=df_dict['vols_dict'], prices_dict=df_dict['prices_dict'], 
                  row_dict=df_dict['row_dict'], method_dict=df_dict['method_dict'], 
-                 graphtype=df_dict['graphtype'], surfacetype=df_dict['surfacetype'], 
+                 wait=df_dict['wait'], graphtype=df_dict['graphtype'], surfacetype=df_dict['surfacetype'], 
                  smoothing=df_dict['smoothing'], scatter=df_dict['scatter'], voltype=df_dict['voltype'], 
                  smoothopt=df_dict['smoothopt'], notebook=df_dict['notebook'], r=df_dict['r'], 
                  q=df_dict['q'], epsilon=df_dict['epsilon'], method=df_dict['method'], 
                  order=df_dict['order'], spacegrain=df_dict['spacegrain'], rbffunc=df_dict['rbffunc'], 
-                 colorscale=df_dict['colorscale']):
+                 colorscale=df_dict['colorscale'], monthlies=df_dict['monthlies']):
         
         models.ImpliedVol.__init__(self)
         self.vols_dict = vols_dict # Dictionary of implied vol fields used in graph methods
         self.prices_dict = prices_dict # Dictionary of price fields used for filtering zero prices in graph methods
         self.row_dict = row_dict # Dictionary of implied vol fields used in implied vol calculation
         self.method_dict = method_dict # Dictionary of implied vol calculation methods used in implied vol calculation
+        self.wait = wait # Time to wait between each url query
         self.surfacetype = surfacetype # Type of 3D graph
         self.smoothing = smoothing # Whether to graph implied vols smoothed using polyfit
         self.scatter = scatter # Whether to include scatter points in 3D meshplot
@@ -78,7 +82,8 @@ class Volatility(models.ImpliedVol):
         self.spacegrain = spacegrain # Number of points in each axis linspace argument for 3D graphs
         self.rbffunc = rbffunc # Radial basis function used in interpolation
         self.colorscale = colorscale # Colors used in plotly interactive graph
-    
+        self.monthlies = monthlies # Whether to filter expiry dates to just 3rd Friday of month
+        
     
     def extracturls(self, ticker):
         """
@@ -135,7 +140,7 @@ class Volatility(models.ImpliedVol):
         return self    
     
         
-    def extractoptions(self, url_dict=None):
+    def extractoptions(self, url_dict=None, wait=None):
         """
         Extract option data from Yahoo Finance
 
@@ -143,6 +148,8 @@ class Volatility(models.ImpliedVol):
         ----------
         url_dict : Dict
             Dictionary of URLs to download option prices from.
+        wait : Int
+            Number of seconds to wait between each url query
 
         Returns
         -------
@@ -154,6 +161,8 @@ class Volatility(models.ImpliedVol):
         # If inputs are not supplied, take existing values
         if url_dict is None:
             url_dict = self.url_dict
+        if wait is None:
+            wait = self.wait
         
         # Create an empty dictionary
         df_dict = {}
@@ -165,8 +174,8 @@ class Volatility(models.ImpliedVol):
             # requests function downloads the data            
             html = requests.get(url).content
             
-            # wait 5 secs between each query so as not to overload server
-            time.sleep(5)
+            # wait between each query so as not to overload server
+            time.sleep(wait)
             
             # if data exists
             try:
@@ -214,7 +223,7 @@ class Volatility(models.ImpliedVol):
 
 
     def transform(self, start_date, lastmins=None, mindays=None, minopts=None, volume=None, 
-                  openint=None):    
+                  openint=None, monthlies=None):    
         """
         Perform some filtering / transforming of the option data
 
@@ -233,13 +242,18 @@ class Volatility(models.ImpliedVol):
             Restrict to minimum Volume
         openint : Int, Optional
             Restrict to minimum Open Interest
-                    
+        monthlies : Bool    
+            Restrict expiries to only 3rd Friday of the month. Default is False.
+            
         Returns
         -------
         DataFrame
             Creates a new DataFrame as a modification of 'full_data'.
 
         """
+        
+        if monthlies is None:
+            monthlies = self.monthlies
         
         # Assign start date to the object
         self.start_date = start_date
@@ -254,6 +268,10 @@ class Volatility(models.ImpliedVol):
         self.data['Last Trade Date Raw'] = self.data['Last Trade Date']
         self.data['Last Trade Date'] = pd.to_datetime(self.data['Last Trade Date'], format='%Y-%m-%d %I:%M%p EDT')
         self.data['Last Trade Date'] = self.data['Last Trade Date'].apply(lambda x: x.replace(tzinfo=est))
+
+        # Create columns of expiry date as datetime object and str
+        self.data['Expiry_datetime'] = pd.to_datetime(self.data['Expiry'], format='%Y-%m-%d')
+        self.data['Expiry_str'] = self.data['Expiry_datetime'].dt.strftime('%Y-%m-%d')
 
         # Filter data from start date
         self.data = self.data[self.data['Last Trade Date']  >= str(pd.to_datetime(start_date))]
@@ -317,7 +335,54 @@ class Volatility(models.ImpliedVol):
         if openint is not None:
             self.data = self.data[self.data['Open Interest']  >= openint]                          
         
+        # If the monthlies flag is set
+        if monthlies == True:
+            
+            # Create an empty list
+            date_list = []
+            
+            # For each date in the url_dict 
+            for key in self.url_dict.keys():
                 
+                # Format that string as a datetime object
+                key_date = dt.datetime.strptime(key, "%Y-%m-%d")
+                
+                # Store the year and month as a tuple in date_list
+                date_list.append((key_date.year, key_date.month))
+            
+            # Create a sorted list from the unique dates in date_list
+            sorted_dates = sorted(list(set(date_list)))
+            
+            # Create an empty list
+            days_list = []
+            
+            # Create a calendar object
+            c = calendar.Calendar(firstweekday=calendar.SATURDAY)
+            
+            # For each tuple of year, month in sorted_dates
+            for tup in sorted_dates:
+                
+                # Create a list of lists of days in that month
+                monthcal = c.monthdatescalendar(tup[0], tup[1])
+                
+                # Extract the date corresponding to the 3rd Friday 
+                expiry = monthcal[2][-1]
+                
+                # Calculate the number of days until that expiry
+                ttm = (expiry - dt.date.today()).days
+                
+                # Append this to the days_list
+                days_list.append(ttm)
+            
+            # For each unique number of days to expiry
+            for days_to_expiry in set(self.data['Days']):
+            
+                # if the expiry is not in the list of monthly expiries
+                if days_to_expiry not in days_list:
+                    
+                    # Remove that expiry from the DataFrame
+                    self.data = self.data[self.data['Days'] != days_to_expiry] 
+         
         return self
     
 
