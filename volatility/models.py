@@ -68,25 +68,25 @@ class Pricer():
 
         Parameters
         ----------
-        S : TYPE
-            DESCRIPTION.
-        K : TYPE
-            DESCRIPTION.
-        T : TYPE
-            DESCRIPTION.
-        r : TYPE
-            DESCRIPTION.
-        q : TYPE
-            DESCRIPTION.
-        sigma : TYPE
-            DESCRIPTION.
-        option : TYPE, optional
-            DESCRIPTION. The default is 'call'.
+        S : Float
+            Stock Price.
+        K : Float
+            Strike Price.
+        T : Float
+            Time to Maturity.
+        r : Float
+            Interest Rate.
+        q : Float
+            Dividend Yield.
+        sigma : Float
+            Implied Volatility.
+        option : Str
+            Type of option. 'put' or 'call'.
 
         Returns
         -------
-        opt_price : TYPE
-            DESCRIPTION.
+        opt_price : Float
+            Option Price.
 
         """
         b = r - q
@@ -116,25 +116,25 @@ class Pricer():
 
         Parameters
         ----------
-        S : TYPE
-            DESCRIPTION.
-        K : TYPE
-            DESCRIPTION.
-        T : TYPE
-            DESCRIPTION.
-        r : TYPE
-            DESCRIPTION.
-        q : TYPE
-            DESCRIPTION.
-        sigma : TYPE
-            DESCRIPTION.
-        option : TYPE, optional
-            DESCRIPTION. The default is 'call'.
+        S : Float
+            Stock Price.
+        K : Float
+            Strike Price.
+        T : Float
+            Time to Maturity.
+        r : Float
+            Interest Rate.
+        q : Float
+            Dividend Yield.
+        sigma : Float
+            Implied Volatility.
+        option : Str
+            Type of option. 'put' or 'call'.
 
         Returns
         -------
-        opt_vega : TYPE
-            DESCRIPTION.
+        opt_vega : Float
+            Option Vega.
 
         """    
         b = r - q
@@ -1356,27 +1356,27 @@ class ImpliedVol(Pricer):
 
         Parameters
         ----------
-        S : TYPE
-            DESCRIPTION.
-        K : TYPE
-            DESCRIPTION.
-        T : TYPE
-            DESCRIPTION.
-        r : TYPE
-            DESCRIPTION.
-        q : TYPE
-            DESCRIPTION.
-        cm : TYPE
-            DESCRIPTION.
-        epsilon : TYPE
-            DESCRIPTION.
-        option : TYPE
-            DESCRIPTION.
+        S : Float
+            Stock Price.
+        K : Float
+            Strike Price.
+        T : Float
+            Time to Maturity.
+        r : Float
+            Interest Rate.
+        q : Float
+            Dividend Yield.
+        cm : Float
+            Option Price.
+        epsilon : Float
+            Degree of precision.
+        option : Str
+            Type of option. 'put' or 'call'.
 
         Returns
         -------
-        result : TYPE
-            DESCRIPTION.
+        result : Float
+            Implied Volatility.
 
         """
                 
