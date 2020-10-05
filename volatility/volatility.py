@@ -857,7 +857,7 @@ class Volatility(models.ImpliedVol):
                 
         # Label axes
         ax.set_xlabel('Strike', fontsize=14, labelpad=15)
-        ax.set_ylabel('Time To Maturity - Days', fontsize=14, labelpad=15)
+        ax.set_ylabel('Time to Expiration (Days)', fontsize=14, labelpad=15)
         ax.set_zlabel('Implied Volatility %', fontsize=14, labelpad=15)
         
         # Specify title with ticker label, voltype and date
@@ -969,7 +969,7 @@ class Volatility(models.ImpliedVol):
             
             # Label axes
             ax.set_xlabel('Strike', fontsize=14, labelpad=15)
-            ax.set_ylabel('Time To Maturity - Days', fontsize=14, labelpad=15)
+            ax.set_ylabel('Time to Expiration (Days)', fontsize=14, labelpad=15)
             ax.set_zlabel('Implied Volatility %', fontsize=14, labelpad=15)
             
             # Specify title with ticker label, voltype and date
@@ -1004,7 +1004,7 @@ class Volatility(models.ImpliedVol):
             
             # Label axes
             ax.set_xlabel('Strike', fontsize=14, labelpad=15)
-            ax.set_ylabel('Time To Maturity - Days', fontsize=14, labelpad=15)
+            ax.set_ylabel('Time to Expiration (Days)', fontsize=14, labelpad=15)
             ax.set_zlabel('Implied Volatility %', fontsize=14, labelpad=15)
             
             # Specify title with ticker label, voltype and date
@@ -1038,7 +1038,7 @@ class Volatility(models.ImpliedVol):
             
             # Label axes
             ax.set_xlabel('Strike', fontsize=14, labelpad=15)
-            ax.set_ylabel('Time To Maturity - Days', fontsize=14, labelpad=15)
+            ax.set_ylabel('Time to Expiration (Days)', fontsize=14, labelpad=15)
             ax.set_zlabel('Implied Volatility %', fontsize=14, labelpad=15)
             
             # Specify title with ticker label, voltype and date
@@ -1141,7 +1141,7 @@ class Volatility(models.ImpliedVol):
                                 # Label axes
                                 xaxis_title='Time to Expiration (Days)',
                                 yaxis_title='Underlying Value',
-                                zaxis_title='Implied Vol',),
+                                zaxis_title='Implied Volatility %',),
                               # Specify title with ticker label, voltype and date
                               title={'text':(str(self.ticker_label.upper())+' Implied Volatility '+str(voltype.title())+
                                      ' Price '+str(self.start_date)),
