@@ -1,10 +1,13 @@
 # Needed packages / versions
-matplotlib==3.0.3
-numpy==1.16.2
-plotly==4.3.0
-scipy==1.4.1
-pandas==1.0.0
-requests=2.21.0
-pytz==2018.9
+numpy
+scipy
+requests
+pytz
+pandas
+matplotlib
+plotly
+spyder
+
+
 
 
