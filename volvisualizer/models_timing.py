@@ -1,10 +1,23 @@
 import math
 import random
+import time
 import numpy as np
 import operator as op
 import scipy.stats as si
-from functools import reduce
+from functools import reduce, wraps
 from scipy.stats import norm
+
+
+def timethis(func):
+    
+    @wraps(func)
+    def wrapper(*args, **kwargs):
+        start = time.perf_counter()
+        r = func(*args, **kwargs)
+        end = time.perf_counter()
+        print('{}.{} : {} milliseconds'.format(func.__module__, func.__name__, (end - start)*1e3))
+        return r
+    return wrapper
 
 
 df_dict = {'df_S':100, 
@@ -39,6 +52,7 @@ class Pricer():
         pass
     
     
+    @timethis
     def _n_choose_r(self, n, r):
         """
         Binomial Coefficients. n choose r
@@ -72,6 +86,7 @@ class Pricer():
         return numer // denom  # or / in Python 2
 
 
+    @timethis
     def black_scholes_merton(self, S, K, T, r, q, sigma, option='call'):
         """
         Black-Scholes-Merton Option price 
@@ -121,6 +136,7 @@ class Pricer():
         return opt_price
     
     
+    @timethis
     def black_scholes_merton_vega(self, S, K, T, r, q, sigma, option='call'):
         """
         Black-Scholes-Merton Option Vega 
@@ -159,6 +175,7 @@ class Pricer():
         return opt_vega
     
     
+    @timethis
     def black_76(self, F, K, T, r, q, sigma, option='call'):
         """
         Black 76 Futures Option price 
@@ -207,6 +224,7 @@ class Pricer():
         return opt_price
     
     
+    @timethis
     def european_binomial(self, S, K, T, r, q, sigma, steps, option='call'):
         """
         European Binomial Option price.
@@ -258,6 +276,7 @@ class Pricer():
         return np.exp(-r * T) * val                     
                 
     
+    @timethis
     def cox_ross_rubinstein_binomial(self, S, K, T, r, q, sigma, steps, option='call', output_flag='price', american=False):
         """
         Cox-Ross-Rubinstein Binomial model
@@ -351,6 +370,7 @@ class Pricer():
         return result
     
     
+    @timethis
     def leisen_reimer_binomial(self, S, K, T, r, q, sigma, steps, option='call', output_flag='price', american=False):
         """
         Leisen Reimer Binomial
@@ -444,6 +464,7 @@ class Pricer():
         return result        
     
     
+    @timethis
     def trinomial_tree(self, S, K, T, r, q, sigma, steps, option='call', output_flag='price', american=False):
         """
         Trinomial Tree
@@ -539,6 +560,7 @@ class Pricer():
         return result                     
     
     
+    @timethis
     def implied_trinomial_tree(self, S, K, T, r, q, sigma, steps, option='call', output_flag='price', 
                              step_n=3, state_i=2, skew=0.0004):
         """
@@ -712,6 +734,7 @@ class Pricer():
         return result    
     
     
+    @timethis
     def explicit_finite_difference(self, S, K, T, r, q, sigma, nodes, option='call', american=False):
         """
         Explicit Finite Difference
@@ -786,6 +809,7 @@ class Pricer():
         return result          
     
     
+    @timethis
     def implicit_finite_difference(self, S, K, T, r, q, sigma, steps, nodes, option='call', american=False):
         """
         Implicit Finite Difference
@@ -863,6 +887,7 @@ class Pricer():
         return result   
     
     
+    @timethis
     def explicit_finite_difference_lns(self, S, K, T, r, q, sigma, steps, nodes, option='call', american=False):
         """
         Explicit Finite Differences - rewrite BS-PDE in terms of ln(S)
@@ -930,7 +955,8 @@ class Pricer():
     
         return result   
     
-   
+    
+    @timethis
     def crank_nicolson(self, S, K, T, r, q, sigma, steps, nodes, option='call', american=False):
         """
         Crank Nicolson
@@ -1008,6 +1034,7 @@ class Pricer():
         return result   
     
     
+    @timethis
     def monte_carlo(self, S, K, T, r, q, sigma, simulations, option='call'):
         """
         Standard Monte Carlo
@@ -1056,6 +1083,7 @@ class Pricer():
         return result
     
     
+    @timethis
     def monte_carlo_with_greeks(self, S, K, T, r, q, sigma, simulations, option='call', output_flag='price'):
         """
         Standard Monte Carlo with Greeks
@@ -1153,6 +1181,7 @@ class Pricer():
         return result
     
     
+    @timethis
     def hull_white_87(self, S, K, T, r, q, sigma, vvol, option='call'):
         """
         Hull White 1987 - Uncorrelated Stochastic Volatility.
@@ -1210,7 +1239,8 @@ class Pricer():
             
         return result
 
-
+    
+    @timethis
     def cholesky_decomposition(self, R):
         """
         Cholesky Decomposition.
@@ -1276,7 +1306,7 @@ class SABRVolatility():
         self.volvol = volvol
         self.rho = rho
         
-        
+    @timethis    
     def calibrate(self):
         """
         Run the SABR calibration
@@ -1442,6 +1472,7 @@ class ImpliedVol(Pricer):
         super().__init__(self)
 
 
+    @timethis
     def implied_vol_newton_raphson(self, S, K, T, r, q, cm, epsilon, option):
         """
         Finds implied volatility using Newton-Raphson method - needs knowledge of 
@@ -1493,6 +1524,7 @@ class ImpliedVol(Pricer):
         return result
     
     
+    @timethis
     def implied_vol_bisection(self, S, K, T, r, q, cm, epsilon, option):
         """
         Finds implied volatility using bisection method.
@@ -1548,7 +1580,8 @@ class ImpliedVol(Pricer):
             
         return result
 
-   
+    
+    @timethis
     def implied_vol_naive(self, S, K, T, r, q, cm, epsilon, option):
         """
         Finds implied volatility using simple naive iteration, increasing precision 
