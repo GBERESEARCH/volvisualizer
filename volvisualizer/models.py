@@ -1,10 +1,9 @@
 import math
 import random
-import time
 import numpy as np
 import operator as op
 import scipy.stats as si
-from functools import reduce, wraps
+from functools import reduce
 from scipy.stats import norm
 
 
@@ -41,24 +40,34 @@ class Pricer():
     
     def _ncr(self, n, r):
         """
-        
+        Binomial Coefficients. n choose r
+        Number of ways to choose an (unordered) subset of r elements from a fixed 
+        set of n elements.
 
         Parameters
         ----------
-        n : TYPE
-            DESCRIPTION.
-        r : TYPE
-            DESCRIPTION.
+        n : Int
+            Set of elements.
+        r : Int
+            Subset of elements.
 
         Returns
         -------
-        TYPE
-            DESCRIPTION.
+        Int
+            Binomial coefficient.
 
         """
+        
+        # Due to symmetry of the binomial coefficient, set r to optimise calculation
         r = min(r, n-r)
+        
+        # Numerator is the descending product from n to n+1-r
         numer = reduce(op.mul, range(n, n-r, -1), 1)
+        
+        # Denominator is the product from 1 to r
         denom = reduce(op.mul, range(1, r+1), 1)
+        
+        # Binomial coefficient is calculated by dividing these two. 
         return numer // denom  # or / in Python 2
 
 
@@ -81,7 +90,7 @@ class Pricer():
         sigma : Float
             Implied Volatility.
         option : Str
-            Type of option. 'put' or 'call'.
+            Type of option. 'put' or 'call'. The default is 'call'.
 
         Returns
         -------
@@ -129,7 +138,7 @@ class Pricer():
         sigma : Float
             Implied Volatility.
         option : Str
-            Type of option. 'put' or 'call'.
+            Type of option. 'put' or 'call'. The default is 'call'.
 
         Returns
         -------
@@ -153,27 +162,27 @@ class Pricer():
 
         Parameters
         ----------
-        S : TYPE
-            DESCRIPTION.
-        K : TYPE
-            DESCRIPTION.
-        T : TYPE
-            DESCRIPTION.
-        r : TYPE
-            DESCRIPTION.
-        q : TYPE
-            DESCRIPTION.
-        sigma : TYPE
-            DESCRIPTION.
-        steps : TYPE
-            DESCRIPTION.
-        option : TYPE, optional
-            DESCRIPTION. The default is 'call'.
+        S : Float
+            Stock Price.
+        K : Float
+            Strike Price.
+        T : Float
+            Time to Maturity.
+        r : Float
+            Interest Rate.
+        q : Float
+            Dividend Yield.
+        sigma : Float
+            Implied Volatility.
+        steps : Int
+            Number of time steps.
+        option : Str
+            Type of option. 'put' or 'call'. The default is 'call'.
 
         Returns
         -------
-        TYPE
-            DESCRIPTION.
+        Float
+            European Binomial Option Price.
 
         """
         dt = T / steps
@@ -203,31 +212,36 @@ class Pricer():
 
         Parameters
         ----------
-        S : TYPE
-            DESCRIPTION.
-        K : TYPE
-            DESCRIPTION.
-        T : TYPE
-            DESCRIPTION.
-        r : TYPE
-            DESCRIPTION.
-        q : TYPE
-            DESCRIPTION.
-        sigma : TYPE
-            DESCRIPTION.
-        steps : TYPE
-            DESCRIPTION.
-        option : TYPE, optional
-            DESCRIPTION. The default is 'call'.
-        output_flag : TYPE, optional
-            DESCRIPTION. The default is 'price'.
-        american : TYPE, optional
-            DESCRIPTION. The default is False.
+        S : Float
+            Stock Price.
+        K : Float
+            Strike Price.
+        T : Float
+            Time to Maturity.
+        r : Float
+            Interest Rate.
+        q : Float
+            Dividend Yield.
+        sigma : Float
+            Implied Volatility.
+        steps : Int
+            Number of time steps.
+        option : Str
+            Type of option. 'put' or 'call'. The default is 'call'.
+        output_flag : Str
+            Whether to return 'price', 'delta', 'gamma', 'theta' or 'all'. The default is 'price'.
+        american : Bool
+            Whether the option is American. The default is False.
 
         Returns
         -------
         result : Various
-            DESCRIPTION.
+            Depending on output flag:
+                'price' : Float; Option Price  
+                'delta' : Float; Option Delta
+                'gamma' : Float; Option Gamma
+                'theta' : Float; Option Theta
+                'all' : Tuple; Option Price, Option Delta, Option Gamma, Option Theta  
 
         """
         z = 1
@@ -290,31 +304,35 @@ class Pricer():
 
         Parameters
         ----------
-        S : TYPE
-            DESCRIPTION.
-        K : TYPE
-            DESCRIPTION.
-        T : TYPE
-            DESCRIPTION.
-        r : TYPE
-            DESCRIPTION.
-        q : TYPE
-            DESCRIPTION.
-        sigma : TYPE
-            DESCRIPTION.
-        steps : TYPE
-            DESCRIPTION.
-        option : TYPE, optional
-            DESCRIPTION. The default is 'call'.
-        output_flag : TYPE, optional
-            DESCRIPTION. The default is 'price'.
-        american : TYPE, optional
-            DESCRIPTION. The default is False.
+        S : Float
+            Stock Price.
+        K : Float
+            Strike Price.
+        T : Float
+            Time to Maturity.
+        r : Float
+            Interest Rate.
+        q : Float
+            Dividend Yield.
+        sigma : Float
+            Implied Volatility.
+        steps : Int
+            Number of time steps.
+        option : Str
+            Type of option. 'put' or 'call'. The default is 'call'.
+        output_flag : Str
+            Whether to return 'price', 'delta', 'gamma' or 'all'. The default is 'price'.
+        american : Bool
+            Whether the option is American. The default is False.
 
         Returns
         -------
-        result : TYPE
-            DESCRIPTION.
+        result : Various
+            Depending on output flag:
+                'price' : Float; Option Price  
+                'delta' : Float; Option Delta
+                'gamma' : Float; Option Gamma
+                'all' : Tuple; Option Price, Option Delta, Option Gamma  
 
         """
          
@@ -379,31 +397,36 @@ class Pricer():
 
         Parameters
         ----------
-        S : TYPE
-            DESCRIPTION.
-        K : TYPE
-            DESCRIPTION.
-        T : TYPE
-            DESCRIPTION.
-        r : TYPE
-            DESCRIPTION.
-        q : TYPE
-            DESCRIPTION.
-        sigma : TYPE
-            DESCRIPTION.
-        steps : TYPE
-            DESCRIPTION.
-        option : TYPE, optional
-            DESCRIPTION. The default is 'call'.
-        output_flag : TYPE, optional
-            DESCRIPTION. The default is 'price'.
-        american : TYPE, optional
-            DESCRIPTION. The default is False.
+        S : Float
+            Stock Price.
+        K : Float
+            Strike Price.
+        T : Float
+            Time to Maturity.
+        r : Float
+            Interest Rate.
+        q : Float
+            Dividend Yield.
+        sigma : Float
+            Implied Volatility.
+        steps : Int
+            Number of time steps.
+        option : Str
+            Type of option. 'put' or 'call'. The default is 'call'.
+        output_flag : Str
+            Whether to return 'price', 'delta', 'gamma', 'theta' or 'all'. The default is 'price'.
+        american : Bool
+            Whether the option is American. The default is False.
 
         Returns
         -------
-        result : TYPE
-            DESCRIPTION.
+        result : Various
+            Depending on output flag:
+                'price' : Float; Option Price  
+                'delta' : Float; Option Delta
+                'gamma' : Float; Option Gamma
+                'theta' : Float; Option Theta
+                'all' : Tuple; Option Price, Option Delta, Option Gamma, Option Theta  
 
         """
                 
@@ -464,28 +487,28 @@ class Pricer():
     
     
     def imptt(self, S, K, T, r, q, sigma, steps, option='call', output_flag='price', 
-                             american=False, step_n=3, state_i=2, skew=0.0004):
+                             step_n=3, state_i=2, skew=0.0004):
         """
         Implied Trinomial Tree
 
         Parameters
         ----------
-        S : TYPE
-            DESCRIPTION.
-        K : TYPE
-            DESCRIPTION.
-        T : TYPE
-            DESCRIPTION.
-        r : TYPE
-            DESCRIPTION.
-        q : TYPE
-            DESCRIPTION.
-        sigma : TYPE
-            DESCRIPTION.
-        steps : TYPE
-            DESCRIPTION.
+        S : Float
+            Stock Price.
+        K : Float
+            Strike Price.
+        T : Float
+            Time to Maturity.
+        r : Float
+            Interest Rate.
+        q : Float
+            Dividend Yield.
+        sigma : Float
+            Implied Volatility.
+        steps : Int
+            Number of time steps.
         option : Str
-            DESCRIPTION. The default is 'call'.
+            Type of option. 'put' or 'call'. The default is 'call'.
         output_flag : Str
             UPM: A matrix of implied up transition probabilities
             DPM: A matrix of implied down transition probabilities
@@ -495,14 +518,13 @@ class Pricer():
             ADni: The Arrow-Debreu price at a single node (at time step step_n and state state_n)
             LVni: The local volatility at a single node
             price: The value of the European option
-        american : TYPE, optional
-            DESCRIPTION. The default is False.
-        step_n : TYPE, optional
-            DESCRIPTION. The default is 3.
-        state_i : TYPE, optional
-            DESCRIPTION. The default is 2.
-        skew : TYPE, optional
-            DESCRIPTION. The default is 0.0004.
+        step_n : Int
+            Time step used for Arrow Debreu price at single node. The default is 3.
+        state_i : Int
+            State position used for Arrow Debreu price at single node. The default is 2.
+        skew : Float
+            Rate at which volatility increases (decreases) for every one point decrease 
+            (increase) in the strike price. The default is 0.0004.
 
         Returns
         -------
@@ -515,7 +537,7 @@ class Pricer():
                 DPni: The implied down transition probability at a single node
                 ADni: The Arrow-Debreu price at a single node (at time step step_n and state state_n)
                 LVni: The local volatility at a single node
-                price: The value of the European optionDESCRIPTION.
+                price: The European option price.
 
         """
                 
@@ -576,6 +598,7 @@ class Pricer():
     
                 downprob[n, i] = qi
                 upprob[n, i] = pi
+                
                 # Calculating local volatilities
                 Fo = (pi * Si2 + qi * Si + (1 - pi -qi) * Si1)
                 localvol[n, i] = np.sqrt((pi * (Si2 - Fo) ** 2 + (1 - pi - qi) * (Si1 - Fo) ** 2 + qi * (Si - Fo) ** 2) / (Fo ** 2 * dt))
@@ -620,8 +643,8 @@ class Pricer():
         elif output_flag == 'ADni':    
             result = arrowdebreu[step_n, state_i]
         elif output_flag == 'Price':
-            # Calculation of option price using the implied trinomial tree
             
+            # Calculation of option price using the implied trinomial tree
             for i in range(2 * steps + 1):
                 optionvaluenode[i] = max(0, z * (S * (u ** max(i - steps, 0)) * (d ** (max((steps - i), 0))) - K))    
     
@@ -642,29 +665,29 @@ class Pricer():
 
         Parameters
         ----------
-        S : TYPE
-            DESCRIPTION.
-        K : TYPE
-            DESCRIPTION.
-        T : TYPE
-            DESCRIPTION.
-        r : TYPE
-            DESCRIPTION.
-        q : TYPE
-            DESCRIPTION.
-        sigma : TYPE
-            DESCRIPTION.
-        nodes : TYPE
-            DESCRIPTION.
-        option : TYPE, optional
-            DESCRIPTION. The default is 'call'.
-        american : TYPE, optional
-            DESCRIPTION. The default is False.
+        S : Float
+            Stock Price.
+        K : Float
+            Strike Price.
+        T : Float
+            Time to Maturity.
+        r : Float
+            Interest Rate.
+        q : Float
+            Dividend Yield.
+        sigma : Float
+            Implied Volatility.
+        nodes : Int
+            Value used to determine number of price and time steps.
+        option : Str
+            Type of option. 'put' or 'call'. The default is 'call'.
+        american : Bool
+            Whether the option is American. The default is False.
 
         Returns
         -------
-        result : TYPE
-            DESCRIPTION.
+        result : Float
+            Option Price.
 
         """
          
@@ -716,37 +739,32 @@ class Pricer():
 
         Parameters
         ----------
-        S : TYPE
-            DESCRIPTION.
-        K : TYPE
-            DESCRIPTION.
-        T : TYPE
-            DESCRIPTION.
-        r : TYPE
-            DESCRIPTION.
-        q : TYPE
-            DESCRIPTION.
-        sigma : TYPE
-            DESCRIPTION.
-        steps : TYPE
-            DESCRIPTION.
-        nodes : TYPE
-            DESCRIPTION.
-        option : TYPE, optional
-            DESCRIPTION. The default is 'call'.
-        american : TYPE, optional
-            DESCRIPTION. The default is False.
+        S : Float
+            Stock Price.
+        K : Float
+            Strike Price.
+        T : Float
+            Time to Maturity.
+        r : Float
+            Interest Rate.
+        q : Float
+            Dividend Yield.
+        sigma : Float
+            Implied Volatility.
+        steps : Int
+            Number of time steps.
+        nodes : Float
+            Number of price steps.
+        option : Str
+            Type of option. 'put' or 'call'. The default is 'call'.
+        american : Bool
+            Whether the option is American. The default is False.
 
         Returns
         -------
-        result : TYPE
-            DESCRIPTION.
-        C : TYPE
-            DESCRIPTION.
-        p : TYPE
-            DESCRIPTION.
-        CT : TYPE
-            DESCRIPTION.
+        result : Float
+            Option Price.
+        
 
         """
          
@@ -789,7 +807,7 @@ class Pricer():
                 
         result = C[SGridtPt + 1]
         
-        return result, C, p, CT    
+        return result   
     
     
     def expfdlns(self, S, K, T, r, q, sigma, steps, nodes, option='call', american=False):
@@ -798,31 +816,31 @@ class Pricer():
 
         Parameters
         ----------
-        S : TYPE
-            DESCRIPTION.
-        K : TYPE
-            DESCRIPTION.
-        T : TYPE
-            DESCRIPTION.
-        r : TYPE
-            DESCRIPTION.
-        q : TYPE
-            DESCRIPTION.
-        sigma : TYPE
-            DESCRIPTION.
-        steps : TYPE
-            DESCRIPTION.
-        nodes : TYPE
-            DESCRIPTION.
-        option : TYPE, optional
-            DESCRIPTION. The default is 'call'.
-        american : TYPE, optional
-            DESCRIPTION. The default is False.
+        S : Float
+            Stock Price.
+        K : Float
+            Strike Price.
+        T : Float
+            Time to Maturity.
+        r : Float
+            Interest Rate.
+        q : Float
+            Dividend Yield.
+        sigma : Float
+            Implied Volatility.
+        steps : Int
+            Number of time steps.
+        nodes : Float
+            Number of price steps.
+        option : Str
+            Type of option. 'put' or 'call'. The default is 'call'.
+        american : Bool
+            Whether the option is American. The default is False.
 
         Returns
         -------
-        result : TYPE
-            DESCRIPTION.
+        result : Float
+            Option Price.
 
         """
           
@@ -866,31 +884,31 @@ class Pricer():
 
         Parameters
         ----------
-        S : TYPE
-            DESCRIPTION.
-        K : TYPE
-            DESCRIPTION.
-        T : TYPE
-            DESCRIPTION.
-        r : TYPE
-            DESCRIPTION.
-        q : TYPE
-            DESCRIPTION.
-        sigma : TYPE
-            DESCRIPTION.
-        steps : TYPE
-            DESCRIPTION.
-        nodes : TYPE
-            DESCRIPTION.
-        option : TYPE, optional
-            DESCRIPTION. The default is 'call'.
-        american : TYPE, optional
-            DESCRIPTION. The default is False.
+        S : Float
+            Stock Price.
+        K : Float
+            Strike Price.
+        T : Float
+            Time to Maturity.
+        r : Float
+            Interest Rate.
+        q : Float
+            Dividend Yield.
+        sigma : Float
+            Implied Volatility.
+        steps : Int
+            Number of time steps.
+        nodes : Float
+            Number of price steps.
+        option : Str
+            Type of option. 'put' or 'call'. The default is 'call'.
+        american : Bool
+            Whether the option is American. The default is False.
 
         Returns
         -------
-        result : TYPE
-            DESCRIPTION.
+        result : Float
+            Option Price.
 
         """
                 
@@ -943,27 +961,27 @@ class Pricer():
 
         Parameters
         ----------
-        S : TYPE
-            DESCRIPTION.
-        K : TYPE
-            DESCRIPTION.
-        T : TYPE
-            DESCRIPTION.
-        r : TYPE
-            DESCRIPTION.
-        q : TYPE
-            DESCRIPTION.
-        sigma : TYPE
-            DESCRIPTION.
-        simulations : TYPE
-            DESCRIPTION.
-        option : TYPE, optional
-            DESCRIPTION. The default is 'call'.
+        S : Float
+            Stock Price.
+        K : Float
+            Strike Price.
+        T : Float
+            Time to Maturity.
+        r : Float
+            Interest Rate.
+        q : Float
+            Dividend Yield.
+        sigma : Float
+            Implied Volatility.
+        simulations : Int
+            Number of Monte Carlo runs.
+        option : Str
+            Type of option. 'put' or 'call'. The default is 'call'.
 
         Returns
         -------
-        result : TYPE
-            DESCRIPTION.
+        result : Float
+            Option Price.
 
         """
          
@@ -991,29 +1009,37 @@ class Pricer():
 
         Parameters
         ----------
-        S : TYPE
-            DESCRIPTION.
-        K : TYPE
-            DESCRIPTION.
-        T : TYPE
-            DESCRIPTION.
-        r : TYPE
-            DESCRIPTION.
-        q : TYPE
-            DESCRIPTION.
-        sigma : TYPE
-            DESCRIPTION.
-        simulations : TYPE
-            DESCRIPTION.
-        option : TYPE, optional
-            DESCRIPTION. The default is 'call'.
-        output_flag : TYPE, optional
-            DESCRIPTION. The default is 'price'.
+        S : Float
+            Stock Price.
+        K : Float
+            Strike Price.
+        T : Float
+            Time to Maturity.
+        r : Float
+            Interest Rate.
+        q : Float
+            Dividend Yield.
+        sigma : Float
+            Implied Volatility.
+        simulations : Int
+            Number of Monte Carlo runs.
+        option : Str
+            Type of option. 'put' or 'call'. The default is 'call'.
+        output_flag : Str
+            Whether to return 'price', 'delta', 'gamma', 'theta', 'vega' or 'all'. 
+            The default is 'price'.
 
         Returns
         -------
-        result : TYPE
-            DESCRIPTION.
+        result : Various
+            Depending on output flag:
+                'price' : Float; Option Price  
+                'delta' : Float; Option Delta
+                'gamma' : Float; Option Gamma
+                'theta' : Float; Option Theta
+                'vega' : Float; Option Vega
+                'all' : Tuple; Option Price, Option Delta, Option Gamma, Option Theta, 
+                               Option Vega  
 
         """
                 
@@ -1076,26 +1102,26 @@ class Pricer():
     
     def hw87sv(self, S, K, T, r, q, sigma, vvol, option='call'):
         """
-        Hull White 1987 Stochastic Volatility.
+        Hull White 1987 - Uncorrelated Stochastic Volatility.
 
         Parameters
         ----------
-        S : TYPE
-            DESCRIPTION.
-        K : TYPE
-            DESCRIPTION.
-        T : TYPE
-            DESCRIPTION.
-        r : TYPE
-            DESCRIPTION.
-        q : TYPE
-            DESCRIPTION.
-        sigma : TYPE
-            DESCRIPTION.
-        vvol : TYPE
-            DESCRIPTION.
-        option : TYPE, optional
-            DESCRIPTION. The default is 'call'.
+        S : Float
+            Stock Price.
+        K : Float
+            Strike Price.
+        T : Float
+            Time to Maturity.
+        r : Float
+            Interest Rate.
+        q : Float
+            Dividend Yield.
+        sigma : Float
+            Implied Volatility.
+        vvol : Float
+            Vol of vol.
+        option : Str
+            Type of option. 'put' or 'call'. The default is 'call'.
 
         Returns
         -------
@@ -1135,6 +1161,7 @@ class Pricer():
     def cd(self, R):
         """
         Cholesky Decomposition.
+        Return M in M * M.T = R where R is a symmetric positive definite correlation matrix
 
         Parameters
         ----------
@@ -1144,7 +1171,7 @@ class Pricer():
         Returns
         -------
         M : Array
-            DESCRIPTION.
+            Matrix decomposition.
 
         """
                 
@@ -1174,6 +1201,18 @@ class Pricer():
 
 
 class SABRVolatility():
+    """
+    Stochastic, Alpha, Beta, Rho model
+    
+    Extension of Black 76 model to include an easily implementable stochastic volatility model
+    
+    Beta will typically be chosen a priori according to how traders observe market prices:
+        e.g. In FX markets, standard to assume lognormal terms, Beta = 1
+             In some Fixed Income markets traders prefer to assume normal terms, Beta = 0
+    
+    Alpha will need to be calibrated to ATM volatility         
+             
+    """
     
     def __init__(self, F, X, T, ATMvol, Beta, VolVol, rho):
         self.F = F
@@ -1187,12 +1226,12 @@ class SABRVolatility():
         
     def calibrate(self):
         """
-        
+        Run the SABR calibration
 
         Returns
         -------
-        TYPE
-            DESCRIPTION.
+        Float
+            Black-76 equivalent SABR volatility.
 
         """
         return self._alphasabr(self._findalpha())
@@ -1204,13 +1243,13 @@ class SABRVolatility():
 
         Parameters
         ----------
-        Alpha : TYPE
-            DESCRIPTION.
+        Alpha : Float
+            Alpha value.
 
         Returns
         -------
-        result : TYPE
-            DESCRIPTION.
+        result : Float
+            Black-76 equivalent SABR volatility.
 
         """
                 
@@ -1241,12 +1280,12 @@ class SABRVolatility():
     
     def _findalpha(self):
         """
-        
+        Find alpha feeding values to _croot method.
 
         Returns
         -------
-        result : TYPE
-            DESCRIPTION.
+        result : Float
+            Smallest positive root.
 
         """
         # Alpha is a function of atm vol etc
@@ -1261,23 +1300,24 @@ class SABRVolatility():
     
     def _croot(self, cubic, quadratic, linear, constant):
         """
-        
+        Finds the smallest positive root of the input cubic polynomial algorithm 
+        from Numerical Recipes
 
         Parameters
         ----------
-        cubic : TYPE
-            DESCRIPTION.
-        quadratic : TYPE
-            DESCRIPTION.
-        linear : TYPE
-            DESCRIPTION.
-        constant : TYPE
-            DESCRIPTION.
+        cubic : Float
+            3rd order term of input polynomial.
+        quadratic : Float
+            2nd order term of input polynomial.
+        linear : Float
+            Linear term of input polynomial.
+        constant : Float
+            Constant term of input polynomial.
 
         Returns
         -------
-        result : TYPE
-            DESCRIPTION.
+        result : Float
+            Smallest positive root.
 
         """
         a = quadratic / cubic
@@ -1324,17 +1364,17 @@ class SABRVolatility():
     
     def _arccos(self, y):
         """
-        
+        Inverse Cosine method
 
         Parameters
         ----------
-        y : TYPE
-            DESCRIPTION.
+        y : Float
+            Input value.
 
         Returns
         -------
-        result : TYPE
-            DESCRIPTION.
+        result : Float
+            Arc Cosine of input value.
 
         """
         result = np.arctan(-y / np.sqrt(-y * y + 1)) + 2 * np.arctan(1)
@@ -1406,27 +1446,27 @@ class ImpliedVol(Pricer):
 
         Parameters
         ----------
-        S : TYPE
-            DESCRIPTION.
-        K : TYPE
-            DESCRIPTION.
-        T : TYPE
-            DESCRIPTION.
-        r : TYPE
-            DESCRIPTION.
-        q : TYPE
-            DESCRIPTION.
-        cm : TYPE
-            DESCRIPTION.
-        epsilon : TYPE
-            DESCRIPTION.
-        option : TYPE
-            DESCRIPTION.
+        S : Float
+            Stock Price.
+        K : Float
+            Strike Price.
+        T : Float
+            Time to Maturity.
+        r : Float
+            Interest Rate.
+        q : Float
+            Dividend Yield.
+        cm : Float
+            Option Price.
+        epsilon : Float
+            Degree of precision.
+        option : Str
+            Type of option. 'put' or 'call'.
 
         Returns
         -------
-        result : TYPE
-            DESCRIPTION.
+        result : Float
+            Implied Volatility.
 
         """
         vLow = 0.005
@@ -1464,27 +1504,27 @@ class ImpliedVol(Pricer):
 
         Parameters
         ----------
-        S : TYPE
-            DESCRIPTION.
-        K : TYPE
-            DESCRIPTION.
-        T : TYPE
-            DESCRIPTION.
-        r : TYPE
-            DESCRIPTION.
-        q : TYPE
-            DESCRIPTION.
-        cm : TYPE
-            DESCRIPTION.
-        epsilon : TYPE
-            DESCRIPTION.
-        option : TYPE
-            DESCRIPTION.
+        S : Float
+            Stock Price.
+        K : Float
+            Strike Price.
+        T : Float
+            Time to Maturity.
+        r : Float
+            Interest Rate.
+        q : Float
+            Dividend Yield.
+        cm : Float
+            Option Price.
+        epsilon : Float
+            Degree of precision.
+        option : Str
+            Type of option. 'put' or 'call'.
 
         Returns
         -------
-        vi : TYPE
-            DESCRIPTION.
+        result : Float
+            Implied Volatility.
 
         """
         vi = 0.2
@@ -1512,7 +1552,9 @@ class ImpliedVol(Pricer):
                 price_diff = cm - ci
                 vi -= (0.00001 * flag)
         
-        return vi
+        result = vi    
+            
+        return result
 
 
 
