@@ -38,7 +38,8 @@ class Pricer():
         #self.K = K # Strike price
         pass
     
-    def _ncr(self, n, r):
+    
+    def _n_choose_r(self, n, r):
         """
         Binomial Coefficients. n choose r
         Number of ways to choose an (unordered) subset of r elements from a fixed 
@@ -71,7 +72,7 @@ class Pricer():
         return numer // denom  # or / in Python 2
 
 
-    def bsm(self, S, K, T, r, q, sigma, option='call'):
+    def black_scholes_merton(self, S, K, T, r, q, sigma, option='call'):
         """
         Black-Scholes-Merton Option price 
 
@@ -98,6 +99,7 @@ class Pricer():
             Option Price.
 
         """
+        
         b = r - q
         carry = np.exp((b - r) * T)
         d1 = (np.log(S / K) + (b + (0.5 * sigma ** 2)) * T) / (sigma * np.sqrt(T))
@@ -119,7 +121,7 @@ class Pricer():
         return opt_price
     
     
-    def bsm_vega(self, S, K, T, r, q, sigma, option='call'):
+    def black_scholes_merton_vega(self, S, K, T, r, q, sigma, option='call'):
         """
         Black-Scholes-Merton Option Vega 
 
@@ -145,7 +147,8 @@ class Pricer():
         opt_vega : Float
             Option Vega.
 
-        """    
+        """  
+        
         b = r - q
         carry = np.exp((b - r) * T)
         d1 = (np.log(S / K) + (b + (0.5 * sigma ** 2)) * T) / (sigma * np.sqrt(T))
@@ -156,7 +159,55 @@ class Pricer():
         return opt_vega
     
     
-    def eurobin(self, S, K, T, r, q, sigma, steps, option='call'):
+    def black_76(self, F, K, T, r, q, sigma, option='call'):
+        """
+        Black 76 Futures Option price 
+
+        Parameters
+        ----------
+        F : Float
+            Discounted Futures Price.
+        K : Float
+            Strike Price.
+        T : Float
+            Time to Maturity.
+        r : Float
+            Interest Rate.
+        q : Float
+            Dividend Yield.
+        sigma : Float
+            Implied Volatility.
+        option : Str
+            Type of option. 'put' or 'call'. The default is 'call'.
+
+        Returns
+        -------
+        opt_price : Float
+            Option Price.
+
+        """
+        
+        carry = np.exp(-r * T)
+        d1 = (np.log(F / K) + (0.5 * sigma ** 2) * T) / (sigma * np.sqrt(T))
+        d2 = (np.log(F / K) + (-0.5 * sigma ** 2) * T) / (sigma * np.sqrt(T))
+          
+        # Cumulative normal distribution function
+        Nd1 = si.norm.cdf(d1, 0.0, 1.0)
+        minusNd1 = si.norm.cdf(-d1, 0.0, 1.0)
+        Nd2 = si.norm.cdf(d2, 0.0, 1.0)
+        minusNd2 = si.norm.cdf(-d2, 0.0, 1.0)
+               
+        if option == "call":
+            opt_price = ((F * carry * Nd1) - 
+                              (K * np.exp(-r * T) * Nd2))  
+        if option == 'put':
+            opt_price = ((K * np.exp(-r * T) * minusNd2) - 
+                              (F * carry * minusNd1))
+               
+        return opt_price
+    
+    
+    def european_binomial(self, S, K, T, r, q, sigma, steps, option='call'):
         """
         European Binomial Option price.
 
@@ -185,6 +236,7 @@ class Pricer():
             European Binomial Option Price.
 
         """
+        
         dt = T / steps
         b = r - q
         u = np.exp(sigma * np.sqrt(dt))
@@ -206,7 +258,7 @@ class Pricer():
         return np.exp(-r * T) * val                     
                 
     
-    def crrbin(self, S, K, T, r, q, sigma, steps, option='call', output_flag='price', american=False):
+    def cox_ross_rubinstein_binomial(self, S, K, T, r, q, sigma, steps, option='call', output_flag='price', american=False):
         """
         Cox-Ross-Rubinstein Binomial model
 
@@ -244,6 +296,7 @@ class Pricer():
                 'all' : Tuple; Option Price, Option Delta, Option Gamma, Option Theta  
 
         """
+        
         z = 1
         if option == 'put':
             z = -1
@@ -298,7 +351,7 @@ class Pricer():
         return result
     
     
-    def lrbin(self, S, K, T, r, q, sigma, steps, option='call', output_flag='price', american=False):
+    def leisen_reimer_binomial(self, S, K, T, r, q, sigma, steps, option='call', output_flag='price', american=False):
         """
         Leisen Reimer Binomial
 
@@ -391,7 +444,7 @@ class Pricer():
         return result        
     
     
-    def tt(self, S, K, T, r, q, sigma, steps, option='call', output_flag='price', american=False):
+    def trinomial_tree(self, S, K, T, r, q, sigma, steps, option='call', output_flag='price', american=False):
         """
         Trinomial Tree
 
@@ -486,7 +539,7 @@ class Pricer():
         return result                     
     
     
-    def imptt(self, S, K, T, r, q, sigma, steps, option='call', output_flag='price', 
+    def implied_trinomial_tree(self, S, K, T, r, q, sigma, steps, option='call', output_flag='price', 
                              step_n=3, state_i=2, skew=0.0004):
         """
         Implied Trinomial Tree
@@ -659,9 +712,9 @@ class Pricer():
         return result    
     
     
-    def expfd(self, S, K, T, r, q, sigma, nodes, option='call', american=False):
+    def explicit_finite_difference(self, S, K, T, r, q, sigma, nodes, option='call', american=False):
         """
-        Explicit Finite Differences
+        Explicit Finite Difference
 
         Parameters
         ----------
@@ -733,9 +786,9 @@ class Pricer():
         return result          
     
     
-    def impfd(self, S, K, T, r, q, sigma, steps, nodes, option='call', american=False):
+    def implicit_finite_difference(self, S, K, T, r, q, sigma, steps, nodes, option='call', american=False):
         """
-        Implicit Finite Differences
+        Implicit Finite Difference
 
         Parameters
         ----------
@@ -810,7 +863,7 @@ class Pricer():
         return result   
     
     
-    def expfdlns(self, S, K, T, r, q, sigma, steps, nodes, option='call', american=False):
+    def explicit_finite_difference_lns(self, S, K, T, r, q, sigma, steps, nodes, option='call', american=False):
         """
         Explicit Finite Differences - rewrite BS-PDE in terms of ln(S)
 
@@ -878,7 +931,7 @@ class Pricer():
         return result   
     
    
-    def cn(self, S, K, T, r, q, sigma, steps, nodes, option='call', american=False):
+    def crank_nicolson(self, S, K, T, r, q, sigma, steps, nodes, option='call', american=False):
         """
         Crank Nicolson
 
@@ -955,7 +1008,7 @@ class Pricer():
         return result   
     
     
-    def mc(self, S, K, T, r, q, sigma, simulations, option='call'):
+    def monte_carlo(self, S, K, T, r, q, sigma, simulations, option='call'):
         """
         Standard Monte Carlo
 
@@ -1003,7 +1056,7 @@ class Pricer():
         return result
     
     
-    def mcgreeks(self, S, K, T, r, q, sigma, simulations, option='call', output_flag='price'):
+    def monte_carlo_with_greeks(self, S, K, T, r, q, sigma, simulations, option='call', output_flag='price'):
         """
         Standard Monte Carlo with Greeks
 
@@ -1100,7 +1153,7 @@ class Pricer():
         return result
     
     
-    def hw87sv(self, S, K, T, r, q, sigma, vvol, option='call'):
+    def hull_white_87(self, S, K, T, r, q, sigma, vvol, option='call'):
         """
         Hull White 1987 - Uncorrelated Stochastic Volatility.
 
@@ -1158,7 +1211,7 @@ class Pricer():
         return result
 
 
-    def cd(self, R):
+    def cholesky_decomposition(self, R):
         """
         Cholesky Decomposition.
         Return M in M * M.T = R where R is a symmetric positive definite correlation matrix
@@ -1214,13 +1267,13 @@ class SABRVolatility():
              
     """
     
-    def __init__(self, F, X, T, ATMvol, Beta, VolVol, rho):
+    def __init__(self, F, X, T, atmvol, beta, volvol, rho):
         self.F = F
         self.X = X
         self.T = T
-        self.ATMvol = ATMvol
-        self.Beta = Beta
-        self.VolVol = VolVol
+        self.atmvol = atmvol
+        self.beta = beta
+        self.volvol = volvol
         self.rho = rho
         
         
@@ -1234,10 +1287,10 @@ class SABRVolatility():
             Black-76 equivalent SABR volatility.
 
         """
-        return self._alphasabr(self._findalpha())
+        return self._alpha_sabr(self._find_alpha())
     
     
-    def _alphasabr(self, Alpha):
+    def _alpha_sabr(self, alpha):
         """
         The SABR skew vol function
 
@@ -1254,11 +1307,11 @@ class SABRVolatility():
         """
                 
         dSABR = np.zeros(4)
-        dSABR[1] = (Alpha / ((self.F * self.X) ** ((1 - self.Beta) / 2) * (1 + (((1 - self.Beta) ** 2) / 24) * 
-                    (np.log(self.F / self.X) ** 2) + ((1 - self.Beta) ** 4 / 1920) * (np.log(self.F / self.X) ** 4))))
+        dSABR[1] = (alpha / ((self.F * self.X) ** ((1 - self.beta) / 2) * (1 + (((1 - self.beta) ** 2) / 24) * 
+                    (np.log(self.F / self.X) ** 2) + ((1 - self.beta) ** 4 / 1920) * (np.log(self.F / self.X) ** 4))))
         
         if abs(self.F - self.X) > 10 ** -8:
-            sabrz = (self.VolVol / Alpha) * (self.F * self.X) ** ((1 - self.Beta) / 2) * np.log(self.F / self.X)
+            sabrz = (self.volvol / alpha) * (self.F * self.X) ** ((1 - self.beta) / 2) * np.log(self.F / self.X)
             y = (np.sqrt(1 - 2 * self.rho * sabrz + sabrz ** 2) + sabrz - self.rho) / (1 - self.rho)
             if abs(y - 1) < 10 ** -8:
                 dSABR[2] = 1
@@ -1269,18 +1322,18 @@ class SABRVolatility():
         else:
             dSABR[2] = 1
             
-        dSABR[3] = (1 + ((((1 - self.Beta) ** 2 / 24) * Alpha ** 2 / ((self.F * self.X) ** (1 - self.Beta))) + 
-                         0.25 * self.rho * self.Beta * self.VolVol * Alpha / ((self.F * self.X) ** ((1 - self.Beta) / 2)) + 
-                         (2 - 3 * self.rho ** 2) * self.VolVol ** 2 / 24) * self.T)
+        dSABR[3] = (1 + ((((1 - self.beta) ** 2 / 24) * alpha ** 2 / ((self.F * self.X) ** (1 - self.beta))) + 
+                         0.25 * self.rho * self.beta * self.VolVol * alpha / ((self.F * self.X) ** ((1 - self.beta) / 2)) + 
+                         (2 - 3 * self.rho ** 2) * self.volvol ** 2 / 24) * self.T)
         
         result = dSABR[1] * dSABR[2] * dSABR[3]
         
         return result
     
     
-    def _findalpha(self):
+    def _find_alpha(self):
         """
-        Find alpha feeding values to _croot method.
+        Find alpha feeding values to _cube_root method.
 
         Returns
         -------
@@ -1290,15 +1343,15 @@ class SABRVolatility():
         """
         # Alpha is a function of atm vol etc
         
-        result = self._croot((1 - self.Beta) ** 2 * self.T / (24 * self.F **(2 - 2 * self.Beta)), 
-                       0.25 * self.rho * self.VolVol * self.Beta * self.T / self.F ** (1 - self.Beta), 
-                       1 + (2 - 3 * self.rho ** 2) / 24 * self.VolVol ** 2 * self.T, 
-                       -self.ATMvol * self.F ** (1 - self.Beta))
+        result = self._cube_root((1 - self.beta) ** 2 * self.T / (24 * self.F **(2 - 2 * self.beta)), 
+                       0.25 * self.rho * self.volvol * self.beta * self.T / self.F ** (1 - self.beta), 
+                       1 + (2 - 3 * self.rho ** 2) / 24 * self.volvol ** 2 * self.T, 
+                       -self.atmvol * self.F ** (1 - self.beta))
         
         return result
     
     
-    def _croot(self, cubic, quadratic, linear, constant):
+    def _cube_root(self, cubic, quadratic, linear, constant):
         """
         Finds the smallest positive root of the input cubic polynomial algorithm 
         from Numerical Recipes
@@ -1328,12 +1381,12 @@ class SABRVolatility():
         roots = np.zeros(4)
         
         if r ** 2 - Q ** 3 >= 0:
-            capA = -np.sign(r) * (abs(r) + np.sqrt(r ** 2 - Q ** 3)) ** (1 / 3)
-            if capA == 0:
-                capB = 0
+            cap_A = -np.sign(r) * (abs(r) + np.sqrt(r ** 2 - Q ** 3)) ** (1 / 3)
+            if cap_A == 0:
+                cap_B = 0
             else:
-                capB = Q / capA
-            result = capA + capB - a / 3
+                cap_B = Q / cap_A
+            result = cap_A + cap_B - a / 3
         else:
             theta = self._arccos(r / Q ** 1.5)
             
@@ -1389,7 +1442,7 @@ class ImpliedVol(Pricer):
         super().__init__(self)
 
 
-    def newtonraphson(self, S, K, T, r, q, cm, epsilon, option):
+    def implied_vol_newton_raphson(self, S, K, T, r, q, cm, epsilon, option):
         """
         Finds implied volatility using Newton-Raphson method - needs knowledge of 
         partial derivative of option pricing formula with respect to volatility (vega)
@@ -1422,15 +1475,15 @@ class ImpliedVol(Pricer):
                 
         # Manaster and Koehler seed value
         vi = np.sqrt(abs(np.log(S / K) + r * T) * 2 / T)
-        ci = self.bsm(S, K, T, r, q, vi, option)    
-        vegai = self.bsm_vega(S, K, T, r, q, vi)
-        minDiff = abs(cm - ci)
+        ci = self.black_scholes_merton(S, K, T, r, q, vi, option)    
+        vegai = self.black_scholes_merton_vega(S, K, T, r, q, vi)
+        mindiff = abs(cm - ci)
     
-        while abs(cm - ci) >= epsilon and abs(cm - ci) <= minDiff:
+        while abs(cm - ci) >= epsilon and abs(cm - ci) <= mindiff:
             vi = vi - (ci - cm) / vegai
-            ci = self.bsm(S, K, T, r, q, vi, option)
-            vegai = self.bsm_vega(S, K, T, r, q, vi)
-            minDiff = abs(cm - ci)
+            ci = self.black_scholes_merton(S, K, T, r, q, vi, option)
+            vegai = self.black_scholes_merton_vega(S, K, T, r, q, vi)
+            mindiff = abs(cm - ci)
             
         if abs(cm - ci) < epsilon:
             result = vi
@@ -1440,7 +1493,7 @@ class ImpliedVol(Pricer):
         return result
     
     
-    def bisection(self, S, K, T, r, q, cm, epsilon, option):
+    def implied_vol_bisection(self, S, K, T, r, q, cm, epsilon, option):
         """
         Finds implied volatility using bisection method.
 
@@ -1471,25 +1524,24 @@ class ImpliedVol(Pricer):
         """
         vLow = 0.005
         vHigh = 4
-        #epsilon = 1e-08
         cLow = self.bsm(S, K, T, r, q, vLow, option)
         cHigh = self.bsm(S, K, T, r, q, vHigh, option)
         counter = 0
         
         vi = vLow + (cm - cLow) * (vHigh - vLow) / (cHigh - cLow)
         
-        while abs(cm - self.bsm(S, K, T, r, q, vi, option)) > epsilon:
+        while abs(cm - self.black_scholes_merton(S, K, T, r, q, vi, option)) > epsilon:
             counter = counter + 1
             if counter == 100:
                 result = 'NA'
             
-            if self.bsm(S, K, T, r, q, vi, option) < cm:
+            if self.black_scholes_merton(S, K, T, r, q, vi, option) < cm:
                 vLow = vi
             else:
                 vHigh = vi
             
-            cLow = self.bsm(S, K, T, r, q, vLow, option)
-            cHigh = self.bsm(S, K, T, r, q, vHigh, option)
+            cLow = self.black_scholes_merton(S, K, T, r, q, vLow, option)
+            cHigh = self.black_scholes_merton(S, K, T, r, q, vHigh, option)
             vi = vLow + (cm - cLow) * (vHigh - vLow) / (cHigh - cLow)
             
         result = vi    
@@ -1497,7 +1549,7 @@ class ImpliedVol(Pricer):
         return result
 
    
-    def iv_naive(self, S, K, T, r, q, cm, epsilon, option):
+    def implied_vol_naive(self, S, K, T, r, q, cm, epsilon, option):
         """
         Finds implied volatility using simple naive iteration, increasing precision 
         each time the difference changes sign.
@@ -1528,7 +1580,7 @@ class ImpliedVol(Pricer):
 
         """
         vi = 0.2
-        ci = self.bsm(S=S, K=K, T=T, r=r, q=q, sigma=vi, option=option)
+        ci = self.black_scholes_merton(S=S, K=K, T=T, r=r, q=q, sigma=vi, option=option)
         price_diff = cm - ci
         if price_diff > 0:
             flag = 1

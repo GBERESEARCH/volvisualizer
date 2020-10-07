@@ -30,9 +30,9 @@ df_dict = {'vols_dict':{'bid':'Imp Vol - Bid',
                        'Mid':'Imp Vol - Mid',
                        'Ask':'Imp Vol - Ask',
                        'Last Price':'Imp Vol - Last'},
-           'method_dict':{'NR':'newtonraphson',
-                          'Bisection':'bisection',
-                          'Naive':'iv_naive'},
+           'method_dict':{'nr':'implied_vol_newton_raphson',
+                          'bisection':'implied_vol_bisection',
+                          'naive':'implied_vol_naive'},
            'wait':5,
            'graphtype':'line', 
            'surfacetype':'mesh', 
@@ -44,7 +44,7 @@ df_dict = {'vols_dict':{'bid':'Imp Vol - Bid',
            'r':0.005, 
            'q':0, 
            'epsilon':0.001, 
-           'method':'NR',
+           'method':'nr',
            'order':3,
            'spacegrain':100,
            'rbffunc':'thin_plate',
@@ -455,7 +455,7 @@ class Volatility(models.ImpliedVol):
         option : Str
             Option type; 'put' or 'call'.
         method : Str
-            Implied Vol method; 'newtonraphson', 'bisection' or 'iv_naive'. The default is 'NR'.
+            Implied Vol method; 'nr', 'bisection' or 'naive'. The default is 'nr'.
 
         Returns
         -------
@@ -495,7 +495,7 @@ class Volatility(models.ImpliedVol):
         epsilon : Float
             Degree of precision to return implied vol. The default is 0.001.
         method : Str
-            Implied Vol method; 'newtonraphson', 'bisection' or 'iv_naive'. The default is 'NR'.
+            Implied Vol method; 'nr', 'bisection' or 'naive'. The default is 'nr'.
 
         Returns
         -------
