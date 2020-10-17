@@ -51,6 +51,7 @@ df_dict = {'vols_dict':{'bid':'Imp Vol - Bid',
            'colorscale':'BlueRed',
            'monthlies':False}
 
+
 class Volatility(models.ImpliedVol):
     
     def __init__(self, vols_dict=df_dict['vols_dict'], prices_dict=df_dict['prices_dict'], 
@@ -429,7 +430,8 @@ class Volatility(models.ImpliedVol):
                     # (using getattr() to select dynamically)
                     row[output_row] = getattr(self, func_name)(S=S, K=K, T=row['TTM'], 
                                                                r=r, q=q, cm=row[input_row], 
-                                                               epsilon=epsilon, option=option)
+                                                               epsilon=epsilon, option=option, 
+                                                               timing=False)
         
         return row
     
