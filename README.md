@@ -3,22 +3,63 @@
 
 A tool to extract option data from Yahoo Finance and provide simple visualization and smoothing to get a general sense of the shape of the volatility surface.
 
+### Installation
+Install from PyPI:
+```
+$ pip install volvisualizer
+```
+
+### Setup
+Import volatility module and initialise a Volatility object
+
+```
+import volatility as vol
+imp = vol.Volatility()
+```
+Extract URLs and the option data for each, specifying a start date used in refining the dataset
+```
+imp.extracturls('^SPX').extractoptions().transform(start_date, monthlies=True)
+```
+Select a range of call and put strikes and spot reference
+```
+imp.combine(ticker, put_strikes, call_strikes, spot, r, q, epsilon, method='NR')
+```
+
 #### Line graph of individual option expiries.
+```
+imp.visualize(graphtype='line')
+```
 ![aapl_line](images/aapl_line.png)
 
 #### 3D Scatter plot of each option implied volatility by strike and expiry.
+```
+imp.visualize(graphtype='scatter', voltype='ask')
+```
 ![spx_scatter](images/spx_scatter.png)
 
 #### 3D Wireframe plot with scatter of each option implied volatility by strike and expiry.
+```
+imp.visualize(graphtype='surface', surfacetype='spline', scatter=True, smoothing=True)
+```
 ![spx_wire_scatter](images/spx_wire_scatter.png)
 
 #### 3D Meshgrid plot of each option implied volatility by strike and expiry.
+```
+imp.visualize(graphtype='surface', surfacetype='mesh', smoothing=True)
+```
 ![tsla_mesh](images/tsla_mesh.png)
 
 #### 3D Interactive plot of each option implied volatility by strike and expiry that can be rotated and zoomed.
+```
+imp.visualize(graphtype='surface', surfacetype='interactive_spline', smoothing=True, notebook=True)
+```
 ![aapl_int_spline](images/aapl_int_spline.png)
 
 #### 3D Interactive plot of each option implied volatility by strike and expiry using radial basis function interpolation.
+```
+imp.visualize(graphtype='surface', surfacetype='interactive_spline', rbffunc='cubic', colorscale='Jet', smoothing=True)
+```
+
 ![tsla_int_rbf](images/tsla_int_rbf.png)
 
 Some simplifying assumptions have been made:
