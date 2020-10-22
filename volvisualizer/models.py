@@ -140,15 +140,7 @@ class Pricer():
             # If the value has been provided as an input, assign this to the object
             else:
                 self.__dict__[k] = v
-        
-        # For each parameter in the list of parameters to be updated that was not supplied as a kwarg 
-        for key in list(set(self.df_params_list) - set(kwargs.keys())):
-            if key not in kwargs:
-                
-                # Set it to the default value and assign to the object
-                val = df_dict['df_'+str(key)]
-                self.__dict__[key] = val
-                
+                      
         return self        
         
     
@@ -181,10 +173,10 @@ class Pricer():
             Option Price.
 
         """
-        if self.refresh == True:
-            self._refresh_params(S=S, K=K, T=T, r=r, q=q, sigma=sigma, option=option, 
-                                 timing=timing)
+        self._refresh_params(S=S, K=K, T=T, r=r, q=q, sigma=sigma, option=option, 
+                             timing=timing)
         
+        self.b = self.r - self.q
         carry = np.exp((self.b - self.r) * self.T)
         d1 = ((np.log(self.S / self.K) + (self.b + (0.5 * self.sigma ** 2)) * self.T) / 
               (self.sigma * np.sqrt(self.T)))
@@ -236,10 +228,11 @@ class Pricer():
             Option Vega.
 
         """  
-        if self.refresh == True:
-            self._refresh_params(S=S, K=K, T=T, r=r, q=q, sigma=sigma, option=option, 
-                                 timing=timing)
+        
+        self._refresh_params(S=S, K=K, T=T, r=r, q=q, sigma=sigma, option=option, 
+                             timing=timing)
 
+        self.b = self.r - self.q
         carry = np.exp((self.b - self.r) * self.T)
         d1 = ((np.log(self.S / self.K) + (self.b + (0.5 * self.sigma ** 2)) * self.T) / 
               (self.sigma * np.sqrt(self.T)))
@@ -1497,7 +1490,6 @@ class ImpliedVol(Pricer):
     
     def __init__(self):
         super().__init__(self) # Inherit methods from Pricer class
-        self.refresh = True # Whether to refresh parameters, set to False if called from another function
 
     
     @timethis
@@ -1602,40 +1594,132 @@ class ImpliedVol(Pricer):
         vLow = 0.005
         vHigh = 4
         cLow = self.black_scholes_merton(S=self.S, K=self.K, T=self.T, r=self.r, 
-                                           q=self.q, sigma=vLow, option=self.option)
+                                         q=self.q, sigma=vLow, option=self.option, 
+                                         timing=False)
         cHigh = self.black_scholes_merton(S=self.S, K=self.K, T=self.T, r=self.r, 
-                                           q=self.q, sigma=vHigh, option=self.option)
+                                          q=self.q, sigma=vHigh, option=self.option, 
+                                          timing=False)
         counter = 0
         
         vi = vLow + (self.cm - cLow) * (vHigh - vLow) / (cHigh - cLow)
         
         while abs(self.cm - self.black_scholes_merton(S=self.S, K=self.K, T=self.T, 
                                                       r=self.r, q=self.q, sigma=vi, 
-                                                      option=self.option)) > self.epsilon:
+                                                      option=self.option, timing=False)) > self.epsilon:
             counter = counter + 1
             if counter == 100:
                 result = 'NA'
             
             if self.black_scholes_merton(S=self.S, K=self.K, T=self.T, r=self.r, 
-                                         q=self.q, sigma=vi, option=self.option) < self.cm:
+                                         q=self.q, sigma=vi, option=self.option, 
+                                         timing=False) < self.cm:
                 vLow = vi
             else:
                 vHigh = vi
             
             cLow = self.black_scholes_merton(S=self.S, K=self.K, T=self.T, r=self.r, 
-                                             q=self.q, sigma=vLow, option=self.option)
+                                             q=self.q, sigma=vLow, option=self.option, 
+                                             timing=False)
             cHigh = self.black_scholes_merton(S=self.S, K=self.K, T=self.T, r=self.r, 
-                                              q=self.q, sigma=vHigh, option=self.option)
+                                              q=self.q, sigma=vHigh, option=self.option, 
+                                              timing=False)
             vi = vLow + (self.cm - cLow) * (vHigh - vLow) / (cHigh - cLow)
             
         result = vi    
             
         return result
-
+   
     
     @timethis
     def implied_vol_naive(self, S=None, K=None, T=None, r=None, q=None, cm=None, 
-                          epsilon=None, option=None, timing=None):
+                               epsilon=None, option=None, timing=None):
+        """
+        Finds implied volatility using simple naive iteration, increasing precision 
+        each time the difference changes sign.
+
+        Parameters
+        ----------
+        S : Float
+            Stock Price. The default is 100.
+        K : Float
+            Strike Price. The default is 100.
+        T : Float
+            Time to Maturity.  The default is 0.25 (3 Months).
+        r : Float
+            Interest Rate. The default is 0.005 (50bps)
+        q : Float
+            Dividend Yield.  The default is 0.
+        cm : Float
+            # Option price used to solve for vol. The default is 5.
+        epsilon : Float
+            Degree of precision. The default is 0.0001
+        option : Str
+            Type of option. 'put' or 'call'. The default is 'call'.
+
+
+        Returns
+        -------
+        result : Float
+            Implied Volatility.
+
+        """
+        
+        self._refresh_params(S=S, K=K, T=T, r=r, q=q, cm=cm, epsilon=epsilon, option=option, 
+                             timing=timing)
+        
+        # Seed vol
+        vi = 0.2
+        
+        # Calculate starting option price using this vol
+        ci = self.black_scholes_merton(S=self.S, K=self.K, T=self.T, r=self.r, 
+                                       q=self.q, sigma=vi, option=self.option, timing=False)
+        
+        # Initial price difference
+        price_diff = self.cm - ci
+        
+        if price_diff > 0:
+            flag = 1
+        else:
+            flag = -1
+        
+        # Starting vol shift size
+        shift = 0.01
+        
+        price_diff_start = price_diff
+        
+        while abs(price_diff) > self.epsilon:
+            
+            # If the price difference changes sign after the vol shift, reduce 
+            # the decimal by one and reverse the sign
+            if np.sign(price_diff) != np.sign(price_diff_start):
+                shift = shift * -0.1                
+            
+            # Calculate new vol
+            vi += (shift * flag)
+            
+            # Set initial price difference
+            price_diff_start = price_diff
+            
+            # Calculate the option price with new vol
+            ci = self.black_scholes_merton(S=self.S, K=self.K, T=self.T, r=self.r, 
+                                           q=self.q, sigma=vi, option=self.option, 
+                                           timing=False)
+            
+            # Price difference after shifting vol
+            price_diff = self.cm - ci
+            
+            # If values are diverging reverse the shift sign
+            if abs(price_diff) > abs(price_diff_start):
+                shift = -shift
+       
+        result = vi    
+            
+        return result
+    
+    
+    @timethis
+    def implied_vol_naive_verbose(self, S=None, K=None, T=None, r=None, q=None, cm=None, 
+                                  epsilon=None, option=None, timing=None):
         """
         Finds implied volatility using simple naive iteration, increasing precision 
         each time the difference changes sign.
@@ -1672,7 +1756,7 @@ class ImpliedVol(Pricer):
         
         vi = 0.2
         ci = self.black_scholes_merton(S=self.S, K=self.K, T=self.T, r=self.r, 
-                                       q=self.q, sigma=vi, option=self.option)
+                                       q=self.q, sigma=vi, option=self.option, timing=False)
         price_diff = self.cm - ci
         if price_diff > 0:
             flag = 1
@@ -1681,39 +1765,54 @@ class ImpliedVol(Pricer):
         while abs(price_diff) > self.epsilon:
             while price_diff * flag > 0:
                 ci = self.black_scholes_merton(S=self.S, K=self.K, T=self.T, r=self.r, 
-                                               q=self.q, sigma=vi, option=self.option)
+                                               q=self.q, sigma=vi, option=self.option, 
+                                               timing=False)
                 price_diff = self.cm - ci
                 vi += (0.01 * flag)
+            
             while price_diff * flag < 0:
                 ci = self.black_scholes_merton(S=self.S, K=self.K, T=self.T, r=self.r, 
-                                               q=self.q, sigma=vi, option=self.option)
+                                               q=self.q, sigma=vi, option=self.option, 
+                                               timing=False)
 
                 price_diff = self.cm - ci
                 vi -= (0.001 * flag)
-            while price_diff > 0:
+            
+            while price_diff * flag > 0:
                 ci = self.black_scholes_merton(S=self.S, K=self.K, T=self.T, r=self.r, 
-                                               q=self.q, sigma=vi, option=self.option)
+                                               q=self.q, sigma=vi, option=self.option, 
+                                               timing=False)
 
                 price_diff = self.cm - ci
                 vi += (0.0001 * flag)
-            while price_diff < 0:
+            
+            while price_diff * flag < 0:
                 ci = self.black_scholes_merton(S=self.S, K=self.K, T=self.T, r=self.r, 
-                                               q=self.q, sigma=vi, option=self.option)
+                                               q=self.q, sigma=vi, option=self.option, 
+                                               timing=False)
 
                 price_diff = self.cm - ci
                 vi -= (0.00001 * flag)
                 
-            while price_diff > 0:
+            while price_diff * flag > 0:
                 ci = self.black_scholes_merton(S=self.S, K=self.K, T=self.T, r=self.r, 
-                                               q=self.q, sigma=vi, option=self.option)
+                                               q=self.q, sigma=vi, option=self.option, 
+                                               timing=False)
 
                 price_diff = self.cm - ci
-                vi += (0.000001 * flag)    
+                vi += (0.000001 * flag)
+            
+            while price_diff * flag < 0:
+                ci = self.black_scholes_merton(S=self.S, K=self.K, T=self.T, r=self.r, 
+                                               q=self.q, sigma=vi, option=self.option, 
+                                               timing=False)
+
+                price_diff = self.cm - ci
+                vi -= (0.0000001 * flag)    
         
         result = vi    
             
         return result
-    
 
 
 class SABRVolatility(Pricer):
