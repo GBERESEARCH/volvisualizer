@@ -196,29 +196,61 @@ class Volatility(models.ImpliedVol):
         # Make a list of all the dates of the DataFrames just stored in the default dictionary
         date_list = list(df_dict.keys()) 
         
+        # Create list to store exceptions
+        self.extract_except = []
+        
         # For each of these dates
         for input_date in date_list:
             
-            # The first entry is 'calls'
-            calls = df_dict[input_date][0]
+            try:
+                # The first entry is 'calls'
+                calls = df_dict[input_date][0]
+                
+                # Create a column designating these as calls
+                calls['Option Type'] = 'call'
+
+                try:
+                    # The second entry is 'puts'
+                    puts = df_dict[input_date][1]
+                    
+                    # Create a column designating these as puts
+                    puts['Option Type'] = 'put'
+                    
+                    # Concatenate these two DataFrames
+                    options = pd.concat([calls, puts])
+    
+                    # Add an 'Expiry' column with the expiry date
+                    options['Expiry'] = pd.to_datetime(input_date).date()
+                    
+                    # Add this DataFrame to 'full_data'
+                    self.full_data = pd.concat([self.full_data, options])
+
+                except:
+ 
+                    # Add an 'Expiry' column with the expiry date
+                    calls['Expiry'] = pd.to_datetime(input_date).date()
+                    
+                    # Add this DataFrame to 'full_data'
+                    self.full_data = pd.concat([self.full_data, calls])
+
+            except:
+                
+                try:
+                    # The second entry is 'puts'
+                    puts = df_dict[input_date][1]
+                    
+                    # Create a column designating these as puts
+                    puts['Option Type'] = 'put'
+                    
+                    # Add an 'Expiry' column with the expiry date
+                    puts['Expiry'] = pd.to_datetime(input_date).date()
+                    
+                    # Add this DataFrame to 'full_data'
+                    self.full_data = pd.concat([self.full_data, puts])
             
-            # Create a column designating these as calls
-            calls['Option Type'] = 'call'
-            
-            # The second entry is 'puts'
-            puts = df_dict[input_date][1]
-            
-            # Create a column designating these as puts
-            puts['Option Type'] = 'put'
-            
-            # Concatenate these two DataFrames
-            options = pd.concat([calls, puts])
-            
-            # Add an 'Expiry' column with the expiry date
-            options['Expiry'] = pd.to_datetime(input_date).date()
-            
-            # Add this DataFrame to 'full_data'
-            self.full_data = pd.concat([self.full_data, options])
+                except:
+                    self.extract_except.append(input_date)
+
         
         return self
 
