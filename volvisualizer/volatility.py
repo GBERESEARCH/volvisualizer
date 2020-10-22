@@ -167,7 +167,7 @@ class Volatility(models.ImpliedVol):
         
         # Create an empty dictionary
         df_dict = {}
-        self.except_dict = {}
+        self.url_except_dict = {}
         
         # each url needs to have an option expiry date associated with it in the url dict 
         for input_date, url in url_dict.items():
@@ -188,7 +188,7 @@ class Volatility(models.ImpliedVol):
             
             # otherwise collect dictionary of exceptions
             except:
-                self.except_dict[input_date] = url
+                self.url_except_dict[input_date] = url
         
         # Create an empty DataFrame
         self.full_data = pd.DataFrame()
@@ -197,7 +197,7 @@ class Volatility(models.ImpliedVol):
         date_list = list(df_dict.keys()) 
         
         # Create list to store exceptions
-        self.extract_except = []
+        self.opt_except_list = []
         
         # For each of these dates
         for input_date in date_list:
@@ -249,7 +249,7 @@ class Volatility(models.ImpliedVol):
                     self.full_data = pd.concat([self.full_data, puts])
             
                 except:
-                    self.extract_except.append(input_date)
+                    self.opt_except_list.append(input_date)
 
         
         return self
