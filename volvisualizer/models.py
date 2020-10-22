@@ -27,7 +27,7 @@ df_dict = {'df_S':100,
            'df_F':100,
            'df_K':100,
            'df_T':0.25,
-           'df_r':0.05,
+           'df_r':0.005,
            'df_q':0,
            'df_sigma':0.2,
            'df_option':'call',
@@ -514,7 +514,7 @@ class Pricer():
         df = np.exp(-self.r * dt)
     
         optionvalue = np.zeros((self.steps + 1))
-        returnvalue = np.zeros((3))
+        returnvalue = np.zeros((4))
         
         for i in range(self.steps + 1):
             optionvalue[i] = max(0, z * (self.S * (u ** i) * (d ** (self.steps - i)) - self.K))
