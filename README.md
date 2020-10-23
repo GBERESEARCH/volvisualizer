@@ -15,6 +15,25 @@ $ pip install volvisualizer
 
 &nbsp;
 
+Or to install in new environment using anaconda:
+```
+$ conda create --name volvis
+```
+Activate new environment
+```
+$ activate volvis
+```
+Install Python
+```
+(volvis) $ conda install python=3.7
+```
+Install package
+```
+(volvis) $ pip install volvisualizer
+```
+
+&nbsp;
+
 ### Setup
 Import volatility module and initialise a Volatility object
 
@@ -95,4 +114,7 @@ Some simplifying assumptions have been made:
 &nbsp;
 
 There are parameters to filter the data based on time since last trade, volume, open interest and select only the monthly options expiring on the 3rd Friday. 
+
+Some of the smoothing techniques are very sensitive to the quality (and quantity) of input data. Overfitting becomes a problem if there aren't enough data points and the more illiquid tickers often generate results that are not to be relied upon.
+
 Additional work is required to calibrate to an arbitrage free surface.
