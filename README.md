@@ -38,7 +38,7 @@ Install package
 Import volatility module and initialise a Volatility object
 
 ```
-import volatility as vol
+import volvisualizer.volatility as vol
 imp = vol.Volatility()
 ```
 
