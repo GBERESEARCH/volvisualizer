@@ -1,4 +1,4 @@
-import models as models
+import volvisualizer.models as models
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
