@@ -876,10 +876,10 @@ class Volatility(models.ImpliedVol):
         fig = plt.figure(figsize=(15, 12))
         ax = fig.add_subplot(111, projection='3d')
         
-        # Tint the axis panes
-        ax.w_xaxis.set_pane_color((0.8, 0.8, 0.9, 0.5))
-        ax.w_yaxis.set_pane_color((0.9, 0.8, 0.9, 0.5))
-        ax.w_zaxis.set_pane_color((0.9, 0.9, 0.8, 0.5))
+        # Tint the axis panes, RGB values from 0-1 and alpha denoting color intensity
+        ax.w_xaxis.set_pane_color((0.9, 0.8, 0.9, 1))
+        ax.w_yaxis.set_pane_color((0.8, 0.8, 0.9, 1))
+        ax.w_zaxis.set_pane_color((0.9, 0.9, 0.8, 1))
         
         # Set fontsize of axis ticks
         ax.tick_params(axis='both', which='major', labelsize=14)
@@ -965,8 +965,8 @@ class Volatility(models.ImpliedVol):
         if notebook is None:
             notebook = self.notebook    
         
-        # Suppress warning about data containing nan values
-        warnings.filterwarnings("ignore")
+        # Suppress mpl user warning about data containing nan values
+        warnings.filterwarnings("ignore", category=UserWarning)
         
         # If smoothing is set to False
         if smoothing == False:
@@ -1007,10 +1007,10 @@ class Volatility(models.ImpliedVol):
             fig = plt.figure(figsize=(15, 12))
             ax = fig.add_subplot(111, projection='3d')
             
-            # Tint the axis panes
-            ax.w_xaxis.set_pane_color((0.8, 0.8, 0.9, 0.5))
-            ax.w_yaxis.set_pane_color((0.9, 0.8, 0.9, 0.5))
-            ax.w_zaxis.set_pane_color((0.9, 0.9, 0.8, 0.5))
+            # Tint the axis panes, RGB values from 0-1 and alpha denoting color intensity
+            ax.w_xaxis.set_pane_color((0.9, 0.8, 0.9, 1))
+            ax.w_yaxis.set_pane_color((0.8, 0.8, 0.9, 1))
+            ax.w_zaxis.set_pane_color((0.9, 0.9, 0.8, 1))
             
             # Set fontsize of axis ticks
             ax.tick_params(axis='both', which='major', labelsize=14)
@@ -1041,10 +1041,10 @@ class Volatility(models.ImpliedVol):
             fig = plt.figure(figsize=(12, 9))
             ax = Axes3D(fig, azim=-60, elev=30)
 
-            # Tint the axis panes
-            ax.w_xaxis.set_pane_color((0.8, 0.8, 0.9, 0.5))
-            ax.w_yaxis.set_pane_color((0.9, 0.8, 0.9, 0.5))
-            ax.w_zaxis.set_pane_color((0.9, 0.9, 0.8, 0.5))
+            # Tint the axis panes, RGB values from 0-1 and alpha denoting color intensity
+            ax.w_xaxis.set_pane_color((0.9, 0.8, 0.9, 1))
+            ax.w_yaxis.set_pane_color((0.8, 0.8, 0.9, 1))
+            ax.w_zaxis.set_pane_color((0.9, 0.9, 0.8, 1))
             
             # Set fontsize of axis ticks
             ax.tick_params(axis='both', which='major', labelsize=14)
@@ -1086,10 +1086,10 @@ class Volatility(models.ImpliedVol):
             fig = plt.figure(figsize=(12,9))
             ax = Axes3D(fig)
 
-            # Tint the axis panes
-            ax.w_xaxis.set_pane_color((0.8, 0.8, 0.9, 0.5))
-            ax.w_yaxis.set_pane_color((0.9, 0.8, 0.9, 0.5))
-            ax.w_zaxis.set_pane_color((0.9, 0.9, 0.8, 0.5))
+            # Tint the axis panes, RGB values from 0-1 and alpha denoting color intensity
+            ax.w_xaxis.set_pane_color((0.9, 0.8, 0.9, 1))
+            ax.w_yaxis.set_pane_color((0.8, 0.8, 0.9, 1))
+            ax.w_zaxis.set_pane_color((0.9, 0.9, 0.8, 1))
             
             # Set fontsize of axis ticks
             ax.tick_params(axis='both', which='major', labelsize=14)
