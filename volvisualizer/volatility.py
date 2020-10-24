@@ -15,6 +15,7 @@ from plotly.offline import plot
 from bs4 import BeautifulSoup
 import datetime as dt
 import calendar
+import warnings
 
 
 # Dictionary of default parameters
@@ -875,6 +876,11 @@ class Volatility(models.ImpliedVol):
         fig = plt.figure(figsize=(15, 12))
         ax = fig.add_subplot(111, projection='3d')
         
+        # Tint the axis panes
+        ax.w_xaxis.set_pane_color((0.8, 0.8, 0.9, 0.5))
+        ax.w_yaxis.set_pane_color((0.9, 0.8, 0.9, 0.5))
+        ax.w_zaxis.set_pane_color((0.9, 0.9, 0.8, 0.5))
+        
         # Set fontsize of axis ticks
         ax.tick_params(axis='both', which='major', labelsize=14)
         
@@ -959,6 +965,9 @@ class Volatility(models.ImpliedVol):
         if notebook is None:
             notebook = self.notebook    
         
+        # Suppress warning about data containing nan values
+        warnings.filterwarnings("ignore")
+        
         # If smoothing is set to False
         if smoothing == False:
             
@@ -998,6 +1007,11 @@ class Volatility(models.ImpliedVol):
             fig = plt.figure(figsize=(15, 12))
             ax = fig.add_subplot(111, projection='3d')
             
+            # Tint the axis panes
+            ax.w_xaxis.set_pane_color((0.8, 0.8, 0.9, 0.5))
+            ax.w_yaxis.set_pane_color((0.9, 0.8, 0.9, 0.5))
+            ax.w_zaxis.set_pane_color((0.9, 0.9, 0.8, 0.5))
+            
             # Set fontsize of axis ticks
             ax.tick_params(axis='both', which='major', labelsize=14)
             
@@ -1026,6 +1040,11 @@ class Volatility(models.ImpliedVol):
             # Create figure and axis objects
             fig = plt.figure(figsize=(12, 9))
             ax = Axes3D(fig, azim=-60, elev=30)
+
+            # Tint the axis panes
+            ax.w_xaxis.set_pane_color((0.8, 0.8, 0.9, 0.5))
+            ax.w_yaxis.set_pane_color((0.9, 0.8, 0.9, 0.5))
+            ax.w_zaxis.set_pane_color((0.9, 0.9, 0.8, 0.5))
             
             # Set fontsize of axis ticks
             ax.tick_params(axis='both', which='major', labelsize=14)
@@ -1066,6 +1085,11 @@ class Volatility(models.ImpliedVol):
             # Create figure and axis objects
             fig = plt.figure(figsize=(12,9))
             ax = Axes3D(fig)
+
+            # Tint the axis panes
+            ax.w_xaxis.set_pane_color((0.8, 0.8, 0.9, 0.5))
+            ax.w_yaxis.set_pane_color((0.9, 0.8, 0.9, 0.5))
+            ax.w_zaxis.set_pane_color((0.9, 0.9, 0.8, 0.5))
             
             # Set fontsize of axis ticks
             ax.tick_params(axis='both', which='major', labelsize=14)
