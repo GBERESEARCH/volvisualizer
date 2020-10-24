@@ -898,28 +898,8 @@ class Volatility(models.ImpliedVol):
         # Create figure and axis objects
         fig = plt.figure(figsize=(12, 9))
         
-        ax = Axes3D(fig, azim=azim, elev=elev)
-        
-        ax.set_facecolor('w')
-        
-        # Tint the axis panes, RGB values from 0-1 and alpha denoting color intensity
-        ax.w_xaxis.set_pane_color((0.9, 0.8, 0.9, 1))
-        ax.w_yaxis.set_pane_color((0.8, 0.8, 0.9, 1))
-        ax.w_zaxis.set_pane_color((0.9, 0.9, 0.8, 1))
-        
-        # Set fontsize of axis ticks
-        ax.tick_params(axis='both', which='major', labelsize=14)
-        
-        
-                
-        # Label axes
-        ax.set_xlabel('Strike', fontsize=14, labelpad=15)
-        ax.set_ylabel('Time to Expiration (Days)', fontsize=14, labelpad=15)
-        ax.set_zlabel('Implied Volatility %', fontsize=14, labelpad=15)
-        
-        # Specify title with ticker label, voltype and date
-        ax.set_title(str(self.ticker_label.upper())+' Implied Volatility '+str(voltype.title())+
-                     ' Price '+str(self.start_date), fontsize=18)       
+        # Create axis object and format
+        ax = self._graph_format(fig=fig, azim=azim, elev=elev, voltype=voltype)
         
         # Create copy of data
         self.data_3D = self.imp_vol_data.copy()
@@ -1043,27 +1023,10 @@ class Volatility(models.ImpliedVol):
             
             # Create figure and axis objects
             fig = plt.figure(figsize=(12, 9))
-            ax = Axes3D(fig, azim=azim, elev=elev)
             
-            ax.set_facecolor('w')
-            
-            # Tint the axis panes, RGB values from 0-1 and alpha denoting color intensity
-            ax.w_xaxis.set_pane_color((0.9, 0.8, 0.9, 1))
-            ax.w_yaxis.set_pane_color((0.8, 0.8, 0.9, 1))
-            ax.w_zaxis.set_pane_color((0.9, 0.9, 0.8, 1))
-            
-            # Set fontsize of axis ticks
-            ax.tick_params(axis='both', which='major', labelsize=14)
-            
-            # Label axes
-            ax.set_xlabel('Strike', fontsize=14, labelpad=15)
-            ax.set_ylabel('Time to Expiration (Days)', fontsize=14, labelpad=15)
-            ax.set_zlabel('Implied Volatility %', fontsize=14, labelpad=15)
-            
-            # Specify title with ticker label, voltype and date
-            ax.set_title(str(self.ticker_label.upper())+' Implied Volatility '+str(voltype.title())+
-                     ' Price '+str(self.start_date), fontsize=18) 
-            
+            # Create axis object and format
+            ax = self._graph_format(fig=fig, azim=azim, elev=elev, voltype=voltype)
+           
             # Display triangular surface plot, using colormap 'viridis'
             ax.plot_trisurf(x, y, z, cmap='viridis', edgecolor='none')
 
@@ -1080,28 +1043,9 @@ class Volatility(models.ImpliedVol):
             # Create figure and axis objects
             fig = plt.figure(figsize=(12, 9))
             
-            ax = Axes3D(fig, azim=azim, elev=elev)
-            
-            
-            ax.set_facecolor('w')
-
-            # Tint the axis panes, RGB values from 0-1 and alpha denoting color intensity
-            ax.w_xaxis.set_pane_color((0.9, 0.8, 0.9, 1))
-            ax.w_yaxis.set_pane_color((0.8, 0.8, 0.9, 1))
-            ax.w_zaxis.set_pane_color((0.9, 0.9, 0.8, 1))
-            
-            # Set fontsize of axis ticks
-            ax.tick_params(axis='both', which='major', labelsize=14)
-            
-            # Label axes
-            ax.set_xlabel('Strike', fontsize=14, labelpad=15)
-            ax.set_ylabel('Time to Expiration (Days)', fontsize=14, labelpad=15)
-            ax.set_zlabel('Implied Volatility %', fontsize=14, labelpad=15)
-            
-            # Specify title with ticker label, voltype and date
-            ax.set_title(str(self.ticker_label.upper())+' Implied Volatility '+str(voltype.title())+
-                     ' Price '+str(self.start_date), fontsize=18) 
-            
+            # Create axis object and format
+            ax = self._graph_format(fig=fig, azim=azim, elev=elev, voltype=voltype)
+                       
             # Plot the surface
             ax.plot_surface(x1, y1, z1)
             
@@ -1127,28 +1071,11 @@ class Volatility(models.ImpliedVol):
             # Populate z-axis array using this function
             z2 = spline(x2, y2)
             
-            # Create figure and axis objects
+            # Create figure
             fig = plt.figure(figsize=(12,9))
             
-            ax = Axes3D(fig, azim=azim, elev=elev)
-            ax.set_facecolor('w')
-
-            # Tint the axis panes, RGB values from 0-1 and alpha denoting color intensity
-            ax.w_xaxis.set_pane_color((0.9, 0.8, 0.9, 1))
-            ax.w_yaxis.set_pane_color((0.8, 0.8, 0.9, 1))
-            ax.w_zaxis.set_pane_color((0.9, 0.9, 0.8, 1))
-            
-            # Set fontsize of axis ticks
-            ax.tick_params(axis='both', which='major', labelsize=14)
-            
-            # Label axes
-            ax.set_xlabel('Strike', fontsize=14, labelpad=15)
-            ax.set_ylabel('Time to Expiration (Days)', fontsize=14, labelpad=15)
-            ax.set_zlabel('Implied Volatility %', fontsize=14, labelpad=15)
-            
-            # Specify title with ticker label, voltype and date
-            ax.set_title(str(self.ticker_label.upper())+' Implied Volatility '+str(voltype.title())+
-                     ' Price '+str(self.start_date), fontsize=18) 
+            # Create axis object and format
+            ax = self._graph_format(fig=fig, azim=azim, elev=elev, voltype=voltype)
             
             # Plot the surface
             ax.plot_wireframe(x2, y2, z2)
