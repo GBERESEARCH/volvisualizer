@@ -1,22 +1,22 @@
-# volvisualizer.
-import models as models
-import pandas as pd
-import numpy as np
-import matplotlib.pyplot as plt
-from mpl_toolkits.mplot3d import Axes3D
-import requests
-import time
-import pytz
-from datetime import date
-from collections import Counter
-import plotly.graph_objects as go
-import scipy as sp
-from scipy.interpolate import griddata
-from plotly.offline import plot
-from bs4 import BeautifulSoup
-import datetime as dt
 import calendar
+import datetime as dt
+import matplotlib.pyplot as plt
+import numpy as np
+import pandas as pd
+import plotly.graph_objects as go
+import pytz
+import requests
+import scipy as sp
+import time
+import volvisualizer.models as models
 import warnings
+from bs4 import BeautifulSoup
+from collections import Counter
+from datetime import date
+from mpl_toolkits.mplot3d import Axes3D
+from operator import itemgetter
+from plotly.offline import plot
+from scipy.interpolate import griddata
 
 
 # Dictionary of default parameters
@@ -137,15 +137,15 @@ class Volatility(models.ImpliedVol):
             # If a value for a parameter has not been provided
             if v is None:
                 
-                # Set it to the default value and assign to the object
-                v = df_dict[str(k)]
-                self.__dict__[k] = v
+                # Set it to the object value and assign to the object and to input dictionary
+                v = self.__dict__[k]
+                kwargs[k] = v 
             
             # If the value has been provided as an input, assign this to the object
             else:
                 self.__dict__[k] = v
                       
-        return self        
+        return kwargs        
     
     
     def extracturls(self, ticker):
@@ -222,12 +222,8 @@ class Volatility(models.ImpliedVol):
         """    
         
         # If inputs are not supplied, take existing values
-        # self._refresh_params(url_dict=url_dict, wait=wait)
-        if url_dict is None:
-            url_dict = self.url_dict
-        if wait is None:
-            wait = self.wait
-        
+        url_dict, wait = itemgetter('url_dict', 'wait')(self._refresh_params(url_dict=url_dict, wait=wait))
+                
         # Create an empty dictionary
         df_dict = {}
         self.url_except_dict = {}
@@ -347,9 +343,8 @@ class Volatility(models.ImpliedVol):
             Creates a new DataFrame as a modification of 'full_data'.
 
         """
-        
-        if monthlies is None:
-            monthlies = self.monthlies
+        # If inputs are not supplied, take existing values
+        monthlies = itemgetter('monthlies')(self._refresh_params(monthlies=monthlies))
         
         # Assign start date to the object
         self.start_date = start_date
@@ -602,15 +597,13 @@ class Volatility(models.ImpliedVol):
         """
         
         # If inputs are not supplied, take existing values
-        # self._refresh_params(r=r, q=q, epsilon=epsilon, method=method)
-        if r is None:
-            r = self.r
-        if q is None:
-            q = self.q
-        if epsilon is None:
-            epsilon = self.epsilon
-        if method is None:
-            method = self.method
+        r, q, epsilon, method = itemgetter('r', 
+                                           'q', 
+                                           'epsilon', 
+                                           'method')(self._refresh_params(r=r, 
+                                                                          q=q, 
+                                                                          epsilon=epsilon, 
+                                                                          method=method))
         
         # create copy of filtered data
         input_data = self.data.copy()
@@ -697,17 +690,12 @@ class Volatility(models.ImpliedVol):
         """
         
         # If inputs are not supplied, take existing values
-        # self._refresh_params(order=order, voltype=voltype, smoothopt=smoothopt)
-        if order is None:
-            order = self.order
-        if voltype is None:
-            voltype = self.voltype
-        if smoothopt is None:
-            smoothopt = self.smoothopt
-        
-        # Assign voltype to the object
-        self.voltype = voltype
-        
+        order, voltype, smoothopt = itemgetter('order', 
+                                               'voltype', 
+                                               'smoothopt')(self._refresh_params(order=order, 
+                                                                                 voltype=voltype, 
+                                                                                 smoothopt=smoothopt))
+               
         # Create a dictionary of the number of options for each maturity
         self.mat_dict = dict(Counter(self.imp_vol_data['Days']))
         
@@ -808,59 +796,19 @@ class Volatility(models.ImpliedVol):
         Displays the output of the chosen graphing method.
 
         """
-              
+
         # If inputs are not supplied, take existing values
-        #self._refresh_params(graphtype=graphtype, surfacetype=surfacetype, smoothing=smoothing, 
-        #                     scatter=scatter, voltype=voltype, order=order, spacegrain=spacegrain, 
-        #                     azim=azim, elev=elev, fig_size=fig_size, rbffunc=rbffunc, 
-        #                     colorscale=colorscale, notebook=notebook)
-        if graphtype is None:
-            graphtype = self.graphtype
-        else:
-            self.graphtype = graphtype 
-        if surfacetype is None:
-            surfacetype = self.surfacetype
-        else:
-            self.surfacetype = surfacetype            
-        if smoothing is None:
-            smoothing = self.smoothing
-        else:
-            self.smoothing = smoothing
-        if scatter is None:
-            scatter = self.scatter
-        else:
-            self.scatter = scatter
-        if voltype == None:
-            voltype = self.voltype    
-        else:
-            self.voltype = voltype
-        if order == None:
-            order = self.order    
-        else:
-            self.order = order
-        if spacegrain == None:
-            spacegrain = self.spacegrain    
-        else:
-            self.spacegrain = spacegrain
-        if azim == None:
-            azim = self.azim
-        if elev == None:
-            elev = self.elev  
-        if fig_size == None:
-            fig_size = self.fig_size
-        if rbffunc == None:
-            rbffunc = self.rbffunc
-        else:
-            self.rbffunc = rbffunc
-        if colorscale == None:
-            colorscale = self.colorscale
-        else:
-            self.colorscale = colorscale    
-        if notebook is None:
-            notebook = self.notebook
-        else:
-            self.notebook = notebook
-        
+        graphtype, surfacetype, smoothing, scatter, voltype, order, spacegrain, azim, \
+            elev, fig_size, rbffunc, colorscale, notebook = itemgetter('graphtype', \
+                'surfacetype', 'smoothing', 'scatter', 'voltype', 'order', 'spacegrain', \
+                    'azim', 'elev', 'fig_size', 'rbffunc', 'colorscale', \
+                        'notebook')(self._refresh_params(graphtype=graphtype, surfacetype=surfacetype, \
+                                                         smoothing=smoothing, scatter=scatter, voltype=voltype, 
+                                                         order=order, spacegrain=spacegrain, azim=azim, 
+                                                         elev=elev, fig_size=fig_size, rbffunc=rbffunc, 
+                                                         colorscale=colorscale, notebook=notebook))
+
+
         # Run method selected by graphtype
         if graphtype == 'line':
             self.line_graph(voltype=voltype)
@@ -889,9 +837,7 @@ class Volatility(models.ImpliedVol):
         """
         
         # If inputs are not supplied, take existing values
-        # self._refresh_params(voltype=voltype)
-        if voltype == None:
-            voltype = self.voltype
+        voltype = itemgetter('voltype')(self._refresh_params(voltype=voltype))
         
         # Create a sorted list of the different number of option expiries
         dates = sorted(list(set(self.imp_vol_data['Expiry'])))
@@ -964,24 +910,14 @@ class Volatility(models.ImpliedVol):
         """
         
         # If inputs are not supplied, take existing values otherwise map to object.
-        # self._refresh_params(voltype=voltype, azim=azim, elev=elev, fig_size=fig_size)
-        if voltype == None:
-            voltype = self.voltype
-        else:
-            self.voltype = voltype
-        if azim == None:
-            azim = self.azim
-        else:
-            self.azim = azim
-        if elev == None:
-            elev = self.elev
-        else:
-            self.elev = elev
-        if fig_size == None:
-            fig_size = self.fig_size
-        else:
-            self.fig_size = fig_size
-            
+        voltype, azim, elev, fig_size = itemgetter('voltype', 
+                                                   'azim', 
+                                                   'elev', 
+                                                   'fig_size')(self._refresh_params(voltype=voltype, 
+                                                                                    azim=azim, 
+                                                                                    elev=elev, 
+                                                                                    fig_size=fig_size))
+                    
         # Create figure and axis objects and format
         self.fig, ax = self._graph_format()
         
@@ -1043,46 +979,17 @@ class Volatility(models.ImpliedVol):
         3D surface plot.
 
         """
-        
+
         # If inputs are not supplied, take existing values otherwise map to object.
-        #self._refresh_params(surfacetype=surfacetype, smoothing=smoothing, scatter=scatter, 
-        #                     voltype=voltype, order=order, spacegrain=spacegrain, 
-        #                     azim=azim, elev=elev, fig_size=fig_size, rbffunc=rbffunc, 
-        #                     colorscale=colorscale, notebook=notebook)
-        if surfacetype is None:
-            surfacetype = self.surfacetype
-        if smoothing is None:
-            smoothing = self.smoothing
-        if scatter is None:
-            scatter = self.scatter
-        if voltype == None:
-            voltype = self.voltype
-        else:
-            self.voltype = voltype
-        if order == None:
-            order = self.order 
-        if spacegrain == None:
-            spacegrain = self.spacegrain
-        else:
-            self.spacegrain = spacegrain
-        if rbffunc == None:
-            rbffunc = self.rbffunc
-        if colorscale == None:
-            colorscale = self.colorscale
-        if notebook is None:
-            notebook = self.notebook 
-        if azim == None:
-            azim = self.azim
-        else:
-            self.azim = azim
-        if elev == None:
-            elev = self.elev
-        else:
-            self.elev = elev
-        if fig_size == None:
-            fig_size = self.fig_size
-        else: 
-            self.fig_size = fig_size    
+        surfacetype, smoothing, scatter, voltype, order, spacegrain, azim, elev, fig_size, \
+            rbffunc, colorscale, notebook = itemgetter('surfacetype', 'smoothing', \
+                'scatter', 'voltype', 'order', 'spacegrain', 'azim', 'elev', 'fig_size', \
+                    'rbffunc', 'colorscale', 'notebook')(self._refresh_params(surfacetype=surfacetype, \
+                                                         smoothing=smoothing, scatter=scatter, voltype=voltype, 
+                                                         order=order, spacegrain=spacegrain, azim=azim, 
+                                                         elev=elev, fig_size=fig_size, rbffunc=rbffunc, 
+                                                         colorscale=colorscale, notebook=notebook))
+        
         
         # Suppress mpl user warning about data containing nan values
         warnings.filterwarnings("ignore", category=UserWarning, 
