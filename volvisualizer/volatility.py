@@ -1,4 +1,5 @@
-import volvisualizer.models as models
+# volvisualizer.
+import models as models
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
@@ -34,6 +35,23 @@ df_dict = {'vols_dict':{'bid':'Imp Vol - Bid',
            'method_dict':{'nr':'implied_vol_newton_raphson',
                           'bisection':'implied_vol_bisection',
                           'naive':'implied_vol_naive'},
+           'mpl_line_params':{'axes.edgecolor':'black',
+                              'axes.titlepad':20,
+                              'axes.xmargin':0.05,
+                              'axes.ymargin':0.05,
+                              'axes.linewidth':2,
+                              'axes.facecolor':(0.8, 0.8, 0.9, 0.5),
+                              'xtick.major.pad':10,
+                              'ytick.major.pad':10,
+                              'lines.linewidth':3.0,
+                              'grid.color':'black',
+                              'grid.linestyle':':'},
+           'mpl_3D_params':{'axes.facecolor':'w',
+                            'axes.labelcolor':'k',
+                            'axes.edgecolor':'w',
+                            'lines.linewidth':0.5,
+                            'xtick.labelbottom':True,
+                            'ytick.labelleft':True},
            'wait':5,
            'graphtype':'line', 
            'surfacetype':'mesh', 
@@ -50,6 +68,7 @@ df_dict = {'vols_dict':{'bid':'Imp Vol - Bid',
            'spacegrain':100,
            'azim':-50,
            'elev':20,
+           'fig_size':(12, 9),
            'rbffunc':'thin_plate',
            'colorscale':'BlueRed',
            'monthlies':False}
@@ -59,19 +78,22 @@ class Volatility(models.ImpliedVol):
     
     def __init__(self, vols_dict=df_dict['vols_dict'], prices_dict=df_dict['prices_dict'], 
                  row_dict=df_dict['row_dict'], method_dict=df_dict['method_dict'], 
-                 wait=df_dict['wait'], graphtype=df_dict['graphtype'], surfacetype=df_dict['surfacetype'], 
-                 smoothing=df_dict['smoothing'], scatter=df_dict['scatter'], voltype=df_dict['voltype'], 
-                 smoothopt=df_dict['smoothopt'], notebook=df_dict['notebook'], r=df_dict['r'], 
-                 q=df_dict['q'], epsilon=df_dict['epsilon'], method=df_dict['method'], 
-                 order=df_dict['order'], spacegrain=df_dict['spacegrain'], azim=df_dict['azim'], 
-                 elev=df_dict['elev'], rbffunc=df_dict['rbffunc'], colorscale=df_dict['colorscale'], 
-                 monthlies=df_dict['monthlies']):
+                 mpl_line_params=df_dict['mpl_line_params'], mpl_3D_params=df_dict['mpl_3D_params'], 
+                 wait=df_dict['wait'], graphtype=df_dict['graphtype'], 
+                 surfacetype=df_dict['surfacetype'], smoothing=df_dict['smoothing'], 
+                 scatter=df_dict['scatter'], voltype=df_dict['voltype'], smoothopt=df_dict['smoothopt'], 
+                 notebook=df_dict['notebook'], r=df_dict['r'], q=df_dict['q'], epsilon=df_dict['epsilon'], 
+                 method=df_dict['method'], order=df_dict['order'], spacegrain=df_dict['spacegrain'], 
+                 azim=df_dict['azim'], elev=df_dict['elev'], fig_size=df_dict['fig_size'], 
+                 rbffunc=df_dict['rbffunc'], colorscale=df_dict['colorscale'], monthlies=df_dict['monthlies']):
         
         models.ImpliedVol.__init__(self)
         self.vols_dict = vols_dict # Dictionary of implied vol fields used in graph methods
         self.prices_dict = prices_dict # Dictionary of price fields used for filtering zero prices in graph methods
         self.row_dict = row_dict # Dictionary of implied vol fields used in implied vol calculation
         self.method_dict = method_dict # Dictionary of implied vol calculation methods used in implied vol calculation
+        self.mpl_line_params = mpl_line_params # Parameters to overwrite mpl_style defaults for line graphs
+        self.mpl_3D_params = mpl_3D_params # Parameters to overwrite mpl_style defaults for 3D graphs
         self.wait = wait # Time to wait between each url query
         self.surfacetype = surfacetype # Type of 3D graph
         self.smoothing = smoothing # Whether to graph implied vols smoothed using polyfit
@@ -86,11 +108,45 @@ class Volatility(models.ImpliedVol):
         self.order = order # Polynomial order used in smoothing
         self.spacegrain = spacegrain # Number of points in each axis linspace argument for 3D graphs
         self.azim = azim # L-R view angle for 3D graphs
-        self.elev = elev # Elevation view angle for 3D graphs 
+        self.elev = elev # Elevation view angle for 3D graphs
+        self.fig_size = fig_size # 3D graph size
         self.rbffunc = rbffunc # Radial basis function used in interpolation
         self.colorscale = colorscale # Colors used in plotly interactive graph
         self.monthlies = monthlies # Whether to filter expiry dates to just 3rd Friday of month
+    
         
+    def _refresh_params(self, **kwargs):
+        """
+        Set parameters for use in various pricing functions
+
+        Parameters
+        ----------
+        **kwargs : Various
+                   Takes any of the arguments of the various methods that use it to refresh data.
+
+        Returns
+        -------
+        Various
+            Runs methods to fix input parameters and reset defaults if no data provided
+
+        """
+        
+        # For all the supplied arguments
+        for k, v in kwargs.items():
+            
+            # If a value for a parameter has not been provided
+            if v is None:
+                
+                # Set it to the default value and assign to the object
+                v = df_dict[str(k)]
+                self.__dict__[k] = v
+            
+            # If the value has been provided as an input, assign this to the object
+            else:
+                self.__dict__[k] = v
+                      
+        return self        
+    
     
     def extracturls(self, ticker):
         """
@@ -166,6 +222,7 @@ class Volatility(models.ImpliedVol):
         """    
         
         # If inputs are not supplied, take existing values
+        # self._refresh_params(url_dict=url_dict, wait=wait)
         if url_dict is None:
             url_dict = self.url_dict
         if wait is None:
@@ -545,6 +602,7 @@ class Volatility(models.ImpliedVol):
         """
         
         # If inputs are not supplied, take existing values
+        # self._refresh_params(r=r, q=q, epsilon=epsilon, method=method)
         if r is None:
             r = self.r
         if q is None:
@@ -639,6 +697,7 @@ class Volatility(models.ImpliedVol):
         """
         
         # If inputs are not supplied, take existing values
+        # self._refresh_params(order=order, voltype=voltype, smoothopt=smoothopt)
         if order is None:
             order = self.order
         if voltype is None:
@@ -708,7 +767,7 @@ class Volatility(models.ImpliedVol):
     
     def visualize(self, graphtype=None, surfacetype=None, smoothing=None, scatter=None, 
                   voltype=None, order=None, spacegrain=None, azim=None, elev=None, 
-                  rbffunc=None, colorscale=None, notebook=None):
+                  fig_size=None, rbffunc=None, colorscale=None, notebook=None):
         """
         Visualize the implied volatility as 2D linegraph, 3D scatter or 3D surface
 
@@ -733,6 +792,8 @@ class Volatility(models.ImpliedVol):
             L-R view angle for 3D graphs. The default is -50.
         elev : Float
             Elevation view angle for 3D graphs. The default is 20.    
+        fig_size : Tuple
+            3D graph size
         rbffunc : Str
             Radial basis function used in interpolation chosen from 'multiquadric', 
             'inverse', 'gaussian', 'linear', 'cubic', 'quintic', 'thin_plate'. The 
@@ -749,6 +810,10 @@ class Volatility(models.ImpliedVol):
         """
               
         # If inputs are not supplied, take existing values
+        #self._refresh_params(graphtype=graphtype, surfacetype=surfacetype, smoothing=smoothing, 
+        #                     scatter=scatter, voltype=voltype, order=order, spacegrain=spacegrain, 
+        #                     azim=azim, elev=elev, fig_size=fig_size, rbffunc=rbffunc, 
+        #                     colorscale=colorscale, notebook=notebook)
         if graphtype is None:
             graphtype = self.graphtype
         else:
@@ -780,7 +845,9 @@ class Volatility(models.ImpliedVol):
         if azim == None:
             azim = self.azim
         if elev == None:
-            elev = self.elev    
+            elev = self.elev  
+        if fig_size == None:
+            fig_size = self.fig_size
         if rbffunc == None:
             rbffunc = self.rbffunc
         else:
@@ -798,12 +865,12 @@ class Volatility(models.ImpliedVol):
         if graphtype == 'line':
             self.line_graph(voltype=voltype)
         if graphtype == 'scatter':
-            self.scatter_3D(voltype=voltype, azim=azim, elev=elev)
+            self.scatter_3D(voltype=voltype, azim=azim, elev=elev, fig_size=fig_size)
         if graphtype == 'surface':
             self.surface_3D(surfacetype=surfacetype, smoothing=smoothing, scatter=scatter, 
                             voltype=voltype, order=order, spacegrain=spacegrain, 
-                            azim=azim, elev=elev, rbffunc=rbffunc, colorscale=colorscale, 
-                            notebook=notebook)
+                            azim=azim, elev=elev, fig_size=fig_size, rbffunc=rbffunc, 
+                            colorscale=colorscale, notebook=notebook)
             
     
     def line_graph(self, voltype=None):
@@ -822,6 +889,7 @@ class Volatility(models.ImpliedVol):
         """
         
         # If inputs are not supplied, take existing values
+        # self._refresh_params(voltype=voltype)
         if voltype == None:
             voltype = self.voltype
         
@@ -834,12 +902,18 @@ class Volatility(models.ImpliedVol):
         # Combine these in a dictionary
         tenor_date_dict = dict(zip(dates, tenors))
         
-        # Create figure, axis objects        
-        fig, ax = plt.subplots(figsize=(14,12))
         plt.style.use('seaborn-darkgrid')
+        plt.rcParams.update(self.mpl_line_params)
+        
+        # Create figure, axis objects        
+        fig, ax = plt.subplots(figsize=self.fig_size)
+        
+        # Create values that scale fonts with fig_size
+        ax_font_scale = int(round(self.fig_size[0] * 1.5))
+        title_font_scale = int(round(self.fig_size[0] * 2))
         
         # Set fontsize of axis ticks
-        ax.tick_params(axis='both', which='major', labelsize=14)
+        ax.tick_params(axis='both', which='major', labelsize=ax_font_scale)
         
         # For each expiry date
         for exp_date, tenor in tenor_date_dict.items():
@@ -851,15 +925,16 @@ class Volatility(models.ImpliedVol):
         plt.grid(True)
         
         # Label axes 
-        ax.set_xlabel('Strike', fontsize=14)
-        ax.set_ylabel('Implied Volatility %', fontsize=14)
+        ax.set_xlabel('Strike', fontsize=ax_font_scale)
+        ax.set_ylabel('Implied Volatility %', fontsize=ax_font_scale)
         
         # Set legend title and font sizes
-        ax.legend(title="Option Expiry", fontsize=12, title_fontsize=15)
+        ax.legend(title="Option Expiry", fontsize=ax_font_scale*0.6, title_fontsize=ax_font_scale*0.8)
         
         # Specify title with ticker label, voltype and date and shift away from chart
         st = fig.suptitle(str(self.ticker_label.upper())+' Implied Volatility '+str(voltype.title())+
-                     ' Price '+str(self.start_date), fontsize=18, fontweight=0, color='black', style='italic', y=1.02)
+                     ' Price '+str(self.start_date), fontsize=title_font_scale, fontweight=0, 
+                     color='black', style='italic', y=1.02)
         st.set_y(0.95)
         fig.subplots_adjust(top=0.9)
         
@@ -867,7 +942,7 @@ class Volatility(models.ImpliedVol):
         plt.show()
 
 
-    def scatter_3D(self, voltype=None, azim=None, elev=None):
+    def scatter_3D(self, voltype=None, azim=None, elev=None, fig_size=None):
         """
         Displays a 3D scatter plot of each option implied vol against strike and maturity
 
@@ -879,6 +954,8 @@ class Volatility(models.ImpliedVol):
             L-R view angle for 3D graphs. The default is -50.
         elev : Float
             Elevation view angle for 3D graphs. The default is 20.
+        fig_size : Tuple
+            3D graph size    
 
         Returns
         -------
@@ -886,38 +963,46 @@ class Volatility(models.ImpliedVol):
 
         """
         
-        # If inputs are not supplied, take existing values
+        # If inputs are not supplied, take existing values otherwise map to object.
+        # self._refresh_params(voltype=voltype, azim=azim, elev=elev, fig_size=fig_size)
         if voltype == None:
             voltype = self.voltype
+        else:
+            self.voltype = voltype
         if azim == None:
             azim = self.azim
+        else:
+            self.azim = azim
         if elev == None:
-            elev = self.elev       
-        
-        # Create figure and axis objects
-        fig = plt.figure(figsize=(12, 9))
-        
-        # Create axis object and format
-        ax = self._graph_format(fig=fig, azim=azim, elev=elev, voltype=voltype)
+            elev = self.elev
+        else:
+            self.elev = elev
+        if fig_size == None:
+            fig_size = self.fig_size
+        else:
+            self.fig_size = fig_size
+            
+        # Create figure and axis objects and format
+        self.fig, ax = self._graph_format()
         
         # Create copy of data
         self.data_3D = self.imp_vol_data.copy()
         
         # Filter out any zero prices
-        self.data_3D = self.data_3D[self.data_3D[str(self.prices_dict[str(voltype)])] != 0]
+        self.data_3D = self.data_3D[self.data_3D[str(self.prices_dict[str(self.voltype)])] != 0]
         
         # Specify the 3 axis values
         x = self.data_3D['Strike']
         y = self.data_3D['TTM'] * 365
-        z = self.data_3D[str(self.vols_dict[str(voltype)])] * 100
+        z = self.data_3D[str(self.vols_dict[str(self.voltype)])] * 100
         
         # Display scatter, specifying colour to vary with z-axis and use colormap 'viridis'
         ax.scatter3D(x, y, z, c=z, cmap='viridis')
     
 
     def surface_3D(self, surfacetype=None, smoothing=None, scatter=None, voltype=None, 
-                   order=None, spacegrain=None, azim=None, elev=None, rbffunc=None, 
-                   colorscale=None, notebook=None):
+                   order=None, spacegrain=None, azim=None, elev=None, fig_size=None, 
+                   rbffunc=None, colorscale=None, notebook=None):
         """
         Displays a 3D surface plot of the implied vol surface against strike and maturity
 
@@ -940,7 +1025,9 @@ class Volatility(models.ImpliedVol):
         azim : Float
             L-R view angle for 3D graphs. The default is -50.
         elev : Float
-            Elevation view angle for 3D graphs. The default is 20.    
+            Elevation view angle for 3D graphs. The default is 20.
+        fig_size : Tuple
+            3D graph size    
         rbffunc : Str
             Radial basis function used in interpolation chosen from 'multiquadric', 
             'inverse', 'gaussian', 'linear', 'cubic', 'quintic', 'thin_plate'. The 
@@ -957,7 +1044,11 @@ class Volatility(models.ImpliedVol):
 
         """
         
-        # If inputs are not supplied, take existing values
+        # If inputs are not supplied, take existing values otherwise map to object.
+        #self._refresh_params(surfacetype=surfacetype, smoothing=smoothing, scatter=scatter, 
+        #                     voltype=voltype, order=order, spacegrain=spacegrain, 
+        #                     azim=azim, elev=elev, fig_size=fig_size, rbffunc=rbffunc, 
+        #                     colorscale=colorscale, notebook=notebook)
         if surfacetype is None:
             surfacetype = self.surfacetype
         if smoothing is None:
@@ -965,11 +1056,15 @@ class Volatility(models.ImpliedVol):
         if scatter is None:
             scatter = self.scatter
         if voltype == None:
-            voltype = self.voltype    
+            voltype = self.voltype
+        else:
+            self.voltype = voltype
         if order == None:
             order = self.order 
         if spacegrain == None:
             spacegrain = self.spacegrain
+        else:
+            self.spacegrain = spacegrain
         if rbffunc == None:
             rbffunc = self.rbffunc
         if colorscale == None:
@@ -978,8 +1073,16 @@ class Volatility(models.ImpliedVol):
             notebook = self.notebook 
         if azim == None:
             azim = self.azim
+        else:
+            self.azim = azim
         if elev == None:
-            elev = self.elev    
+            elev = self.elev
+        else:
+            self.elev = elev
+        if fig_size == None:
+            fig_size = self.fig_size
+        else: 
+            self.fig_size = fig_size    
         
         # Suppress mpl user warning about data containing nan values
         warnings.filterwarnings("ignore", category=UserWarning, 
@@ -992,22 +1095,22 @@ class Volatility(models.ImpliedVol):
             self.data_3D = self.imp_vol_data.copy()
             
             # Filter out any zero prices
-            self.data_3D = self.data_3D[self.data_3D[str(self.prices_dict[str(voltype)])] != 0]
+            self.data_3D = self.data_3D[self.data_3D[str(self.prices_dict[str(self.voltype)])] != 0]
             
             # Set 'graph vol' to be the specified voltype
-            self.data_3D['Graph Vol'] = self.data_3D[str(self.vols_dict[str(voltype)])]
+            self.data_3D['Graph Vol'] = self.data_3D[str(self.vols_dict[str(self.voltype)])]
         
         # Otherwise, if smoothing is set to True
         else:
             
             # Apply the smoothing function to the specified voltype
-            self.smooth(order=order, voltype=voltype)
+            self.smooth(order=order, voltype=self.voltype)
             
             # Create copy of implied vol data
             self.data_3D = self.imp_vol_data_smoothed.copy()
             
             # Filter out any zero prices
-            self.data_3D = self.data_3D[self.data_3D[str(self.prices_dict[str(voltype)])] != 0]
+            self.data_3D = self.data_3D[self.data_3D[str(self.prices_dict[str(self.voltype)])] != 0]
             
             # Set 'graph vol' to be the smoothed vol
             self.data_3D['Graph Vol'] = self.data_3D['Smoothed Vol']
@@ -1020,11 +1123,8 @@ class Volatility(models.ImpliedVol):
         
         if surfacetype == 'trisurf':
             
-            # Create figure and axis objects
-            fig = plt.figure(figsize=(12, 9))
-            
-            # Create axis object and format
-            ax = self._graph_format(fig=fig, azim=azim, elev=elev, voltype=voltype)
+            # Create figure and axis objects and format
+            self.fig, ax = self._graph_format()
            
             # Display triangular surface plot, using colormap 'viridis'
             ax.plot_trisurf(x, y, z, cmap='viridis', edgecolor='none')
@@ -1039,11 +1139,8 @@ class Volatility(models.ImpliedVol):
             # Map the z-axis with the scipy griddata method, applying cubic spline interpolation
             z1 = griddata(np.array([x,y]).T, np.array(z), (x1,y1), method='cubic')
             
-            # Create figure and axis objects
-            fig = plt.figure(figsize=(12, 9))
-            
-            # Create axis object and format
-            ax = self._graph_format(fig=fig, azim=azim, elev=elev, voltype=voltype)
+            # Create figure and axis objects and format
+            self.fig, ax = self._graph_format()
                        
             # Plot the surface
             ax.plot_surface(x1, y1, z1)
@@ -1065,16 +1162,13 @@ class Volatility(models.ImpliedVol):
             z2 = np.zeros((x.size, z.size))
             
             # Apply scipy interpolate radial basis function, choosing the rbffunc parameter 
-            spline = sp.interpolate.Rbf(x, y, z, function=rbffunc, smooth=5, episilon=5)
+            spline = sp.interpolate.Rbf(x, y, z, function=rbffunc, smooth=5, epsilon=5)
             
             # Populate z-axis array using this function
             z2 = spline(x2, y2)
             
-            # Create figure
-            fig = plt.figure(figsize=(12,9))
-            
-            # Create axis object and format
-            ax = self._graph_format(fig=fig, azim=azim, elev=elev, voltype=voltype)
+            # Create figure and axis objects and format
+            self.fig, ax = self._graph_format()
             
             # Plot the surface
             ax.plot_wireframe(x2, y2, z2)
@@ -1082,7 +1176,7 @@ class Volatility(models.ImpliedVol):
             
             # If scatter is True, overlay the surface with the unsmoothed scatter points
             if scatter == True:
-                z = self.data_3D[str(self.vols_dict[str(voltype)])] * 100
+                z = self.data_3D[str(self.vols_dict[str(self.voltype)])] * 100
                 ax.scatter3D(x, y, z, c='r')
 
 
@@ -1127,7 +1221,7 @@ class Volatility(models.ImpliedVol):
             # basis function, choosing the rbffunc parameter
             if surfacetype == 'interactive_spline':
                 z2 = np.zeros((x.size, z.size))
-                spline = sp.interpolate.Rbf(x, y, z, function=rbffunc, smooth=5, episilon=5)
+                spline = sp.interpolate.Rbf(x, y, z, function=rbffunc, smooth=5, epsilon=5)
                 z2 = spline(x2, y2)
             
             # Initialize Figure object
@@ -1171,7 +1265,7 @@ class Volatility(models.ImpliedVol):
                                     zerolinecolor="white",),
                                 # Label axes
                                 xaxis_title='Time to Expiration (Days)',
-                                yaxis_title='Underlying Value',
+                                yaxis_title='Strike',
                                 zaxis_title='Implied Volatility %',),
                               # Specify title with ticker label, voltype and date
                               title={'text':(str(self.ticker_label.upper())+' Implied Volatility '+str(voltype.title())+
@@ -1199,32 +1293,52 @@ class Volatility(models.ImpliedVol):
 
         # Set warnings back to default
         warnings.filterwarnings("default", category=UserWarning)
-
         
 
-    def _graph_format(self, fig, azim, elev, voltype):
+    def _graph_format(self):
+        
+        # Update chart parameters        
+        plt.rcParams.update(self.mpl_3D_params)
+        
+        # Create fig object
+        self.fig = plt.figure(figsize=self.fig_size)
         
         # Create axes object
-        ax = Axes3D(fig, azim=azim, elev=elev)
-        
+        ax = self.fig.add_subplot(111, projection='3d', azim=self.azim, elev=self.elev)
+              
         # Set background color to white
         ax.set_facecolor('w')
 
+        # Create values that scale fonts with fig_size 
+        ax_font_scale = int(round(self.fig_size[0] * 1.5))
+        title_font_scale = int(round(self.fig_size[0] * 2))
+
         # Tint the axis panes, RGB values from 0-1 and alpha denoting color intensity
-        ax.w_xaxis.set_pane_color((0.9, 0.8, 0.9, 1))
-        ax.w_yaxis.set_pane_color((0.8, 0.8, 0.9, 1))
-        ax.w_zaxis.set_pane_color((0.9, 0.9, 0.8, 1))
+        ax.w_xaxis.set_pane_color((0.9, 0.8, 0.9, 0.8))
+        ax.w_yaxis.set_pane_color((0.8, 0.8, 0.9, 0.8))
+        ax.w_zaxis.set_pane_color((0.9, 0.9, 0.8, 0.8))
+        
+        # Set z-axis to left hand side
+        ax.zaxis._axinfo['juggled'] = (1, 2, 0)
         
         # Set fontsize of axis ticks
-        ax.tick_params(axis='both', which='major', labelsize=14)
+        ax.tick_params(axis='both', which='major', labelsize=ax_font_scale)
         
         # Label axes
-        ax.set_xlabel('Strike', fontsize=14, labelpad=15)
-        ax.set_ylabel('Time to Expiration (Days)', fontsize=14, labelpad=15)
-        ax.set_zlabel('Implied Volatility %', fontsize=14, labelpad=15)
+        ax.set_xlabel('Strike', fontsize=ax_font_scale, labelpad=ax_font_scale)
+        ax.set_ylabel('Time to Expiration (Days)', fontsize=ax_font_scale, labelpad=ax_font_scale)
+        ax.set_zlabel('Implied Volatility %', fontsize=ax_font_scale, labelpad=ax_font_scale)
         
         # Specify title with ticker label, voltype and date
-        ax.set_title(str(self.ticker_label.upper())+' Implied Volatility '+str(voltype.title())+
-                 ' Price '+str(self.start_date), fontsize=18)
-        
-        return ax
+        st = self.fig.suptitle(str(self.ticker_label.upper())+' Implied Volatility '+str(self.voltype.title())+
+                               ' Price '+str(self.start_date), fontsize=title_font_scale, fontweight=0, 
+                               color='black', style='italic', y=1.02)
+
+        st.set_y(0.95)
+        self.fig.subplots_adjust(top=1)
+                
+        return self.fig, ax
+    
+            
+    
+    
