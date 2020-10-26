@@ -66,7 +66,7 @@ imp.combine(ticker, put_strikes, call_strikes, spot, r, q, epsilon, method='NR')
 ```
 imp.visualize(graphtype='line')
 ```
-![aapl_line](images/aapl_line.png)
+![tsla_line](images/tsla_line.png)
 
 &nbsp;
 
@@ -74,7 +74,7 @@ imp.visualize(graphtype='line')
 ```
 imp.visualize(graphtype='scatter', voltype='ask')
 ```
-![spx_scatter](images/spx_scatter.png)
+![aapl_scatter](images/aapl_scatter.png)
 
 &nbsp;
 
@@ -82,7 +82,7 @@ imp.visualize(graphtype='scatter', voltype='ask')
 ```
 imp.visualize(graphtype='surface', surfacetype='spline', scatter=True, smoothing=True)
 ```
-![spx_wire_scatter](images/spx_wire_scatter.png)
+![gld_wire_scatter](images/gld_wire_scatter.png)
 
 &nbsp;
 
@@ -90,7 +90,7 @@ imp.visualize(graphtype='surface', surfacetype='spline', scatter=True, smoothing
 ```
 imp.visualize(graphtype='surface', surfacetype='mesh', smoothing=True)
 ```
-![tsla_mesh](images/tsla_mesh.png)
+![spx_mesh](images/spx_mesh.png)
 
 &nbsp;
 
