@@ -15,7 +15,7 @@ $ pip install volvisualizer
 
 &nbsp;
 
-Or to install in new environment using anaconda:
+To install in new environment using anaconda:
 ```
 $ conda create --name volvis
 ```
@@ -25,7 +25,11 @@ $ activate volvis
 ```
 Install Python
 ```
-(volvis) $ conda install python=3.7
+(volvis) $ conda install python
+```
+Install Spyder
+```
+(volvis) $ conda install spyder=4
 ```
 Install package
 ```
