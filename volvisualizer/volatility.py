@@ -68,7 +68,7 @@ df_dict = {'vols_dict':{'bid':'Imp Vol - Bid',
            'spacegrain':100,
            'azim':-50,
            'elev':20,
-           'fig_size':(12, 9),
+           'fig_size':(15, 12),
            'rbffunc':'thin_plate',
            'colorscale':'BlueRed',
            'monthlies':False}
@@ -79,15 +79,16 @@ class Volatility(models.ImpliedVol):
     def __init__(self, vols_dict=df_dict['vols_dict'], prices_dict=df_dict['prices_dict'], 
                  row_dict=df_dict['row_dict'], method_dict=df_dict['method_dict'], 
                  mpl_line_params=df_dict['mpl_line_params'], mpl_3D_params=df_dict['mpl_3D_params'], 
-                 wait=df_dict['wait'], graphtype=df_dict['graphtype'], 
-                 surfacetype=df_dict['surfacetype'], smoothing=df_dict['smoothing'], 
-                 scatter=df_dict['scatter'], voltype=df_dict['voltype'], smoothopt=df_dict['smoothopt'], 
-                 notebook=df_dict['notebook'], r=df_dict['r'], q=df_dict['q'], epsilon=df_dict['epsilon'], 
-                 method=df_dict['method'], order=df_dict['order'], spacegrain=df_dict['spacegrain'], 
-                 azim=df_dict['azim'], elev=df_dict['elev'], fig_size=df_dict['fig_size'], 
-                 rbffunc=df_dict['rbffunc'], colorscale=df_dict['colorscale'], monthlies=df_dict['monthlies']):
+                 wait=df_dict['wait'], graphtype=df_dict['graphtype'], surfacetype=df_dict['surfacetype'], 
+                 smoothing=df_dict['smoothing'], scatter=df_dict['scatter'], voltype=df_dict['voltype'], 
+                 smoothopt=df_dict['smoothopt'], notebook=df_dict['notebook'], r=df_dict['r'], 
+                 q=df_dict['q'], epsilon=df_dict['epsilon'], method=df_dict['method'], 
+                 order=df_dict['order'], spacegrain=df_dict['spacegrain'], azim=df_dict['azim'], 
+                 elev=df_dict['elev'], fig_size=df_dict['fig_size'], rbffunc=df_dict['rbffunc'], 
+                 colorscale=df_dict['colorscale'], monthlies=df_dict['monthlies'], df_dict=df_dict):
         
         models.ImpliedVol.__init__(self)
+        self.df_dict = df_dict # Dictionary of default parameters
         self.vols_dict = vols_dict # Dictionary of implied vol fields used in graph methods
         self.prices_dict = prices_dict # Dictionary of price fields used for filtering zero prices in graph methods
         self.row_dict = row_dict # Dictionary of implied vol fields used in implied vol calculation
@@ -115,9 +116,42 @@ class Volatility(models.ImpliedVol):
         self.monthlies = monthlies # Whether to filter expiry dates to just 3rd Friday of month
     
         
-    def _refresh_params(self, **kwargs):
+    def _refresh_params_current(self, **kwargs):
         """
-        Set parameters for use in various pricing functions
+        Set parameters for use in various pricing functions to the current object values.
+
+        Parameters
+        ----------
+        **kwargs : Various
+                   Takes any of the arguments of the various methods that use it to refresh data.
+
+        Returns
+        -------
+        Various
+            Runs methods to fix input parameters and set to current object values if no data provided
+
+        """
+        
+        # For all the supplied arguments
+        for k, v in kwargs.items():
+            
+            # If a value for a parameter has not been provided
+            if v is None:
+                
+                # Set it to the object value and assign to the object and to input dictionary
+                v = self.__dict__[k]
+                kwargs[k] = v 
+            
+            # If the value has been provided as an input, assign this to the object
+            else:
+                self.__dict__[k] = v
+                      
+        return kwargs        
+    
+    
+    def _refresh_params_default(self, **kwargs):
+        """
+        Set parameters for use in various pricing functions to the default values.
 
         Parameters
         ----------
@@ -137,8 +171,9 @@ class Volatility(models.ImpliedVol):
             # If a value for a parameter has not been provided
             if v is None:
                 
-                # Set it to the object value and assign to the object and to input dictionary
-                v = self.__dict__[k]
+                # Set it to the default value and assign to the object and to input dictionary
+                v = df_dict[str(k)]
+                self.__dict__[k] = v
                 kwargs[k] = v 
             
             # If the value has been provided as an input, assign this to the object
@@ -222,7 +257,7 @@ class Volatility(models.ImpliedVol):
         """    
         
         # If inputs are not supplied, take existing values
-        url_dict, wait = itemgetter('url_dict', 'wait')(self._refresh_params(url_dict=url_dict, wait=wait))
+        url_dict, wait = itemgetter('url_dict', 'wait')(self._refresh_params_current(url_dict=url_dict, wait=wait))
                 
         # Create an empty dictionary
         df_dict = {}
@@ -343,8 +378,8 @@ class Volatility(models.ImpliedVol):
             Creates a new DataFrame as a modification of 'full_data'.
 
         """
-        # If inputs are not supplied, take existing values
-        monthlies = itemgetter('monthlies')(self._refresh_params(monthlies=monthlies))
+        # If inputs are not supplied, take default values
+        monthlies = itemgetter('monthlies')(self._refresh_params_default(monthlies=monthlies))
         
         # Assign start date to the object
         self.start_date = start_date
@@ -596,14 +631,14 @@ class Volatility(models.ImpliedVol):
 
         """
         
-        # If inputs are not supplied, take existing values
+        # If inputs are not supplied, take default values
         r, q, epsilon, method = itemgetter('r', 
                                            'q', 
                                            'epsilon', 
-                                           'method')(self._refresh_params(r=r, 
-                                                                          q=q, 
-                                                                          epsilon=epsilon, 
-                                                                          method=method))
+                                           'method')(self._refresh_params_default(r=r, 
+                                                                                  q=q, 
+                                                                                  epsilon=epsilon, 
+                                                                                  method=method))
         
         # create copy of filtered data
         input_data = self.data.copy()
@@ -692,9 +727,9 @@ class Volatility(models.ImpliedVol):
         # If inputs are not supplied, take existing values
         order, voltype, smoothopt = itemgetter('order', 
                                                'voltype', 
-                                               'smoothopt')(self._refresh_params(order=order, 
-                                                                                 voltype=voltype, 
-                                                                                 smoothopt=smoothopt))
+                                               'smoothopt')(self._refresh_params_current(order=order, 
+                                                                                         voltype=voltype, 
+                                                                                         smoothopt=smoothopt))
                
         # Create a dictionary of the number of options for each maturity
         self.mat_dict = dict(Counter(self.imp_vol_data['Days']))
@@ -796,17 +831,22 @@ class Volatility(models.ImpliedVol):
         Displays the output of the chosen graphing method.
 
         """
+        
+        # Refresh inputs if not supplied
+        # For some we want them to persist between queries so take existing object values
+        graphtype, surfacetype, smoothing, voltype, colorscale, azim, elev, \
+            notebook = itemgetter('graphtype', 'surfacetype', 'smoothing', 
+                                  'voltype', 'colorscale', 'azim', 'elev', 
+                                  'notebook')(self._refresh_params_current(graphtype=graphtype, \
+                                      surfacetype=surfacetype, smoothing=smoothing, voltype=voltype, 
+                                      colorscale=colorscale, azim=azim, elev=elev, notebook=notebook))
+ 
 
-        # If inputs are not supplied, take existing values
-        graphtype, surfacetype, smoothing, scatter, voltype, order, spacegrain, azim, \
-            elev, fig_size, rbffunc, colorscale, notebook = itemgetter('graphtype', \
-                'surfacetype', 'smoothing', 'scatter', 'voltype', 'order', 'spacegrain', \
-                    'azim', 'elev', 'fig_size', 'rbffunc', 'colorscale', \
-                        'notebook')(self._refresh_params(graphtype=graphtype, surfacetype=surfacetype, \
-                                                         smoothing=smoothing, scatter=scatter, voltype=voltype, 
-                                                         order=order, spacegrain=spacegrain, azim=azim, 
-                                                         elev=elev, fig_size=fig_size, rbffunc=rbffunc, 
-                                                         colorscale=colorscale, notebook=notebook))
+        # For others we reset to default each time
+        scatter, order, spacegrain, fig_size, rbffunc = itemgetter('scatter', 'order', \
+            'spacegrain', 'fig_size', 'rbffunc')(self._refresh_params_default(scatter=scatter, order=order, 
+                                                                              spacegrain=spacegrain, fig_size=fig_size, 
+                                                                              rbffunc=rbffunc))
 
 
         # Run method selected by graphtype
@@ -837,7 +877,7 @@ class Volatility(models.ImpliedVol):
         """
         
         # If inputs are not supplied, take existing values
-        voltype = itemgetter('voltype')(self._refresh_params(voltype=voltype))
+        voltype = itemgetter('voltype')(self._refresh_params_current(voltype=voltype))
         
         # Create a sorted list of the different number of option expiries
         dates = sorted(list(set(self.imp_vol_data['Expiry'])))
@@ -850,6 +890,7 @@ class Volatility(models.ImpliedVol):
         
         plt.style.use('seaborn-darkgrid')
         plt.rcParams.update(self.mpl_line_params)
+        self.fig_size = (12, 9)
         
         # Create figure, axis objects        
         fig, ax = plt.subplots(figsize=self.fig_size)
@@ -909,14 +950,14 @@ class Volatility(models.ImpliedVol):
 
         """
         
-        # If inputs are not supplied, take existing values otherwise map to object.
-        voltype, azim, elev, fig_size = itemgetter('voltype', 
-                                                   'azim', 
-                                                   'elev', 
-                                                   'fig_size')(self._refresh_params(voltype=voltype, 
-                                                                                    azim=azim, 
-                                                                                    elev=elev, 
-                                                                                    fig_size=fig_size))
+        # Refresh inputs if not supplied
+        # For some we want them to persist between queries so take existing object values
+        voltype, azim, elev = itemgetter('voltype', 'azim', 'elev')(self._refresh_params_current(voltype=voltype, 
+                                                                                                 azim=azim, 
+                                                                                                 elev=elev))
+        
+        # For others we reset to default each time
+        fig_size = itemgetter('fig_size')(self._refresh_params_default(fig_size=fig_size))                                                                                            
                     
         # Create figure and axis objects and format
         self.fig, ax = self._graph_format()
@@ -980,15 +1021,19 @@ class Volatility(models.ImpliedVol):
 
         """
 
-        # If inputs are not supplied, take existing values otherwise map to object.
-        surfacetype, smoothing, scatter, voltype, order, spacegrain, azim, elev, fig_size, \
-            rbffunc, colorscale, notebook = itemgetter('surfacetype', 'smoothing', \
-                'scatter', 'voltype', 'order', 'spacegrain', 'azim', 'elev', 'fig_size', \
-                    'rbffunc', 'colorscale', 'notebook')(self._refresh_params(surfacetype=surfacetype, \
-                                                         smoothing=smoothing, scatter=scatter, voltype=voltype, 
-                                                         order=order, spacegrain=spacegrain, azim=azim, 
-                                                         elev=elev, fig_size=fig_size, rbffunc=rbffunc, 
-                                                         colorscale=colorscale, notebook=notebook))
+        # Refresh inputs if not supplied
+        # For some we want them to persist between queries so take existing object values
+        surfacetype, smoothing, voltype, colorscale, azim, elev, notebook = itemgetter('surfacetype', \
+            'smoothing', 'voltype', 'colorscale', 'azim', 'elev', 'notebook')(self._refresh_params_current( \
+                surfacetype=surfacetype, smoothing=smoothing, voltype=voltype, colorscale=colorscale, 
+                azim=azim, elev=elev, notebook=notebook))
+ 
+
+        # For others we reset to default each time
+        scatter, order, spacegrain, fig_size, rbffunc = itemgetter('scatter', 'order', \
+            'spacegrain', 'fig_size', 'rbffunc')(self._refresh_params_default(scatter=scatter, order=order, 
+                                                                              spacegrain=spacegrain, fig_size=fig_size, 
+                                                                              rbffunc=rbffunc))
         
         
         # Suppress mpl user warning about data containing nan values
@@ -1103,11 +1148,13 @@ class Volatility(models.ImpliedVol):
                 contour_y_size = 100
             elif (self.data_3D['Strike'].max() - self.data_3D['Strike'].min()) > 250:
                 contour_y_size = 50
+            elif (self.data_3D['Strike'].max() - self.data_3D['Strike'].min()) > 50:
+                contour_y_size = 10
             else:
-                contour_y_size = 25
+                contour_y_size = 5
             contour_z_start = 0
-            contour_z_stop = 0.5
-            contour_z_size = 0.05
+            contour_z_stop = 100
+            contour_z_size = 10
 
             # Specify the 3 axis values            
             x = self.data_3D['TTM'] * 365
@@ -1217,8 +1264,8 @@ class Volatility(models.ImpliedVol):
         ax.set_facecolor('w')
 
         # Create values that scale fonts with fig_size 
-        ax_font_scale = int(round(self.fig_size[0] * 1.5))
-        title_font_scale = int(round(self.fig_size[0] * 2))
+        ax_font_scale = int(round(self.fig_size[0] * 1.1))
+        title_font_scale = int(round(self.fig_size[0] * 1.5))
 
         # Tint the axis panes, RGB values from 0-1 and alpha denoting color intensity
         ax.w_xaxis.set_pane_color((0.9, 0.8, 0.9, 0.8))
@@ -1232,9 +1279,9 @@ class Volatility(models.ImpliedVol):
         ax.tick_params(axis='both', which='major', labelsize=ax_font_scale)
         
         # Label axes
-        ax.set_xlabel('Strike', fontsize=ax_font_scale, labelpad=ax_font_scale)
-        ax.set_ylabel('Time to Expiration (Days)', fontsize=ax_font_scale, labelpad=ax_font_scale)
-        ax.set_zlabel('Implied Volatility %', fontsize=ax_font_scale, labelpad=ax_font_scale)
+        ax.set_xlabel('Strike', fontsize=ax_font_scale, labelpad=ax_font_scale*1.2)
+        ax.set_ylabel('Time to Expiration (Days)', fontsize=ax_font_scale, labelpad=ax_font_scale*1.2)
+        ax.set_zlabel('Implied Volatility %', fontsize=ax_font_scale, labelpad=ax_font_scale*1.2)
         
         # Specify title with ticker label, voltype and date
         st = self.fig.suptitle(str(self.ticker_label.upper())+' Implied Volatility '+str(self.voltype.title())+
