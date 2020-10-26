@@ -96,9 +96,9 @@ imp.visualize(graphtype='surface', surfacetype='mesh', smoothing=True)
 
 #### 3D Interactive plot of each option implied volatility by strike and expiry that can be rotated and zoomed.
 ```
-imp.visualize(graphtype='surface', surfacetype='interactive_spline', smoothing=True, notebook=True)
+imp.visualize(graphtype='surface',surfacetype='interactive_spline', smoothing=True, notebook=False, colorscale='Blues', scatter=True, opacity=0.8)
 ```
-![aapl_int_spline](images/aapl_int_spline.png)
+![spx_int_scatter](images/spx_int_scatter.png)
 
 &nbsp;
 
