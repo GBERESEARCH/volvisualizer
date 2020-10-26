@@ -8,7 +8,8 @@ import pytz
 import requests
 import scipy as sp
 import time
-import volvisualizer.models as models
+#import volvisualizer.
+import models as models
 import warnings
 from bs4 import BeautifulSoup
 from collections import Counter
@@ -71,7 +72,8 @@ df_dict = {'vols_dict':{'bid':'Imp Vol - Bid',
            'fig_size':(15, 12),
            'rbffunc':'thin_plate',
            'colorscale':'BlueRed',
-           'monthlies':False}
+           'monthlies':False,
+           'opacity':1}
 
 
 class Volatility(models.ImpliedVol):
@@ -85,7 +87,8 @@ class Volatility(models.ImpliedVol):
                  q=df_dict['q'], epsilon=df_dict['epsilon'], method=df_dict['method'], 
                  order=df_dict['order'], spacegrain=df_dict['spacegrain'], azim=df_dict['azim'], 
                  elev=df_dict['elev'], fig_size=df_dict['fig_size'], rbffunc=df_dict['rbffunc'], 
-                 colorscale=df_dict['colorscale'], monthlies=df_dict['monthlies'], df_dict=df_dict):
+                 colorscale=df_dict['colorscale'], monthlies=df_dict['monthlies'], 
+                 opacity=df_dict['opacity'], df_dict=df_dict):
         
         models.ImpliedVol.__init__(self)
         self.df_dict = df_dict # Dictionary of default parameters
@@ -114,7 +117,7 @@ class Volatility(models.ImpliedVol):
         self.rbffunc = rbffunc # Radial basis function used in interpolation
         self.colorscale = colorscale # Colors used in plotly interactive graph
         self.monthlies = monthlies # Whether to filter expiry dates to just 3rd Friday of month
-    
+        self.opacity = opacity # Opacity of 3D interactive graph 
         
     def _refresh_params_current(self, **kwargs):
         """
@@ -790,7 +793,7 @@ class Volatility(models.ImpliedVol):
     
     def visualize(self, graphtype=None, surfacetype=None, smoothing=None, scatter=None, 
                   voltype=None, order=None, spacegrain=None, azim=None, elev=None, 
-                  fig_size=None, rbffunc=None, colorscale=None, notebook=None):
+                  fig_size=None, rbffunc=None, colorscale=None, opacity=None, notebook=None):
         """
         Visualize the implied volatility as 2D linegraph, 3D scatter or 3D surface
 
@@ -823,6 +826,8 @@ class Volatility(models.ImpliedVol):
             default is 'thin_plate'     
         colorscale : Str
             Colors used in plotly interactive graph. The default is 'BlueRed'
+        opacity : Float
+            opacity of 3D interactive graph
         notebook : Bool
             Whether interactive graph is run in Jupyter notebook or IDE. The default is False.
 
@@ -843,10 +848,10 @@ class Volatility(models.ImpliedVol):
  
 
         # For others we reset to default each time
-        scatter, order, spacegrain, fig_size, rbffunc = itemgetter('scatter', 'order', \
-            'spacegrain', 'fig_size', 'rbffunc')(self._refresh_params_default(scatter=scatter, order=order, 
+        scatter, order, spacegrain, fig_size, rbffunc, opacity = itemgetter('scatter', 'order', \
+            'spacegrain', 'fig_size', 'rbffunc', 'opacity')(self._refresh_params_default(scatter=scatter, order=order, 
                                                                               spacegrain=spacegrain, fig_size=fig_size, 
-                                                                              rbffunc=rbffunc))
+                                                                              rbffunc=rbffunc, opacity=opacity))
 
 
         # Run method selected by graphtype
@@ -858,7 +863,7 @@ class Volatility(models.ImpliedVol):
             self.surface_3D(surfacetype=surfacetype, smoothing=smoothing, scatter=scatter, 
                             voltype=voltype, order=order, spacegrain=spacegrain, 
                             azim=azim, elev=elev, fig_size=fig_size, rbffunc=rbffunc, 
-                            colorscale=colorscale, notebook=notebook)
+                            colorscale=colorscale, opacity=opacity, notebook=notebook)
             
     
     def line_graph(self, voltype=None):
@@ -979,7 +984,7 @@ class Volatility(models.ImpliedVol):
 
     def surface_3D(self, surfacetype=None, smoothing=None, scatter=None, voltype=None, 
                    order=None, spacegrain=None, azim=None, elev=None, fig_size=None, 
-                   rbffunc=None, colorscale=None, notebook=None):
+                   rbffunc=None, colorscale=None, opacity=None, notebook=None):
         """
         Displays a 3D surface plot of the implied vol surface against strike and maturity
 
@@ -1011,6 +1016,8 @@ class Volatility(models.ImpliedVol):
             default is 'thin_plate'
         colorscale : Str
             Colors used in plotly interactive graph. The default is 'BlueRed'
+        opacity : Float
+            opacity of 3D interactive graph    
         notebook : Bool
             Whether interactive graph is run in Jupyter notebook or IDE. The default 
             is False.
@@ -1030,10 +1037,10 @@ class Volatility(models.ImpliedVol):
  
 
         # For others we reset to default each time
-        scatter, order, spacegrain, fig_size, rbffunc = itemgetter('scatter', 'order', \
-            'spacegrain', 'fig_size', 'rbffunc')(self._refresh_params_default(scatter=scatter, order=order, 
+        scatter, order, spacegrain, fig_size, rbffunc, opacity = itemgetter('scatter', 'order', \
+            'spacegrain', 'fig_size', 'rbffunc', 'opacity')(self._refresh_params_default(scatter=scatter, order=order, 
                                                                               spacegrain=spacegrain, fig_size=fig_size, 
-                                                                              rbffunc=rbffunc))
+                                                                              rbffunc=rbffunc, opacity=opacity))
         
         
         # Suppress mpl user warning about data containing nan values
@@ -1179,25 +1186,56 @@ class Volatility(models.ImpliedVol):
                 z2 = spline(x2, y2)
             
             # Initialize Figure object
-            fig = go.Figure(data=[go.Surface(x=x2, 
-                                             y=y2, 
-                                             z=z2,
-                                             
-                                             # Specify the colors to be used
-                                             colorscale=colorscale,
-                                             
-                                             # Define the contours
-                                             contours = {"x": {"show": True, "start": contour_x_start, 
-                                                               "end": contour_x_stop, "size": contour_x_size, "color":"white"},            
-                                                         "y": {"show": True, "start": contour_y_start, 
-                                                               "end": contour_y_stop, "size": contour_y_size, "color":"white"},  
-                                                         "z": {"show": True, "start": contour_z_start, 
-                                                               "end": contour_z_stop, "size": contour_z_size}},)])
-            
+            if scatter == True:
+                z = self.data_3D[str(self.vols_dict[str(self.voltype)])] * 100
+                fig = go.Figure(data=[go.Surface(x=x2, 
+                                                 y=y2, 
+                                                 z=z2,
+                                                 
+                                                 # Specify the colors to be used
+                                                 colorscale=colorscale,
+                                                 
+                                                 # Define the contours
+                                                 contours = {"x": {"show": True, "start": contour_x_start, 
+                                                                   "end": contour_x_stop, "size": contour_x_size, "color":"white"},            
+                                                             "y": {"show": True, "start": contour_y_start, 
+                                                                   "end": contour_y_stop, "size": contour_y_size, "color":"white"},  
+                                                             "z": {"show": True, "start": contour_z_start, 
+                                                                   "end": contour_z_stop, "size": contour_z_size}},
+                                                 opacity=opacity),
+                                      go.Scatter3d(x=x,
+                                                   y=y,
+                                                   z=z,
+                                                   mode='markers',
+                                                   marker=dict(
+                                                       size=2,
+                                                       color='red', # set color to an array/list of desired values
+                                                       colorscale='Viridis', # choose a colorscale
+                                                       opacity=0.9)
+                                                   )])
+
+            else:
+                fig = go.Figure(data=[go.Surface(x=x2, 
+                                                 y=y2, 
+                                                 z=z2,
+                                                 
+                                                 # Specify the colors to be used
+                                                 colorscale=colorscale,
+                                                 
+                                                 # Define the contours
+                                                 contours = {"x": {"show": True, "start": contour_x_start, 
+                                                                   "end": contour_x_stop, "size": contour_x_size, "color":"white"},            
+                                                             "y": {"show": True, "start": contour_y_start, 
+                                                                   "end": contour_y_stop, "size": contour_y_size, "color":"white"},  
+                                                             "z": {"show": True, "start": contour_z_start, 
+                                                                   "end": contour_z_stop, "size": contour_z_size}},
+                                                 opacity=opacity)])
+
             # Set initial camera angle
             camera = dict(
                 eye=dict(x=2, y=1, z=1)
             )
+
             
             # Set Time To Expiration to increase left to right
             fig.update_scenes(xaxis_autorange="reversed")
