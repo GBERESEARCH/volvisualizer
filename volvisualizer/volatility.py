@@ -8,8 +8,7 @@ import pytz
 import requests
 import scipy as sp
 import time
-#import volvisualizer.
-import models as models
+import volvisualizer.models as models
 import warnings
 from bs4 import BeautifulSoup
 from collections import Counter
@@ -730,7 +729,7 @@ class Volatility(models.ImpliedVol):
         # If inputs are not supplied, take existing values
         order, voltype, smoothopt = itemgetter('order', 
                                                'voltype', 
-                                               'smoothopt')(self._refresh_params_current(order=order, 
+                                               'smoothopt')(self._refresh_params_default(order=order, 
                                                                                          voltype=voltype, 
                                                                                          smoothopt=smoothopt))
                
@@ -839,19 +838,19 @@ class Volatility(models.ImpliedVol):
         
         # Refresh inputs if not supplied
         # For some we want them to persist between queries so take existing object values
-        graphtype, surfacetype, smoothing, voltype, colorscale, azim, elev, \
-            notebook = itemgetter('graphtype', 'surfacetype', 'smoothing', 
-                                  'voltype', 'colorscale', 'azim', 'elev', 
-                                  'notebook')(self._refresh_params_current(graphtype=graphtype, \
-                                      surfacetype=surfacetype, smoothing=smoothing, voltype=voltype, 
-                                      colorscale=colorscale, azim=azim, elev=elev, notebook=notebook))
+        graphtype, surfacetype, smoothing, colorscale, azim, elev, notebook = itemgetter(
+            'graphtype', 'surfacetype', 'smoothing', 'colorscale', 'azim', 'elev', 
+            'notebook')(self._refresh_params_current(
+                graphtype=graphtype, surfacetype=surfacetype, smoothing=smoothing, 
+                colorscale=colorscale, azim=azim, elev=elev, notebook=notebook))
  
 
         # For others we reset to default each time
-        scatter, order, spacegrain, fig_size, rbffunc, opacity = itemgetter('scatter', 'order', \
-            'spacegrain', 'fig_size', 'rbffunc', 'opacity')(self._refresh_params_default(scatter=scatter, order=order, 
-                                                                              spacegrain=spacegrain, fig_size=fig_size, 
-                                                                              rbffunc=rbffunc, opacity=opacity))
+        voltype, scatter, order, spacegrain, fig_size, rbffunc, opacity = itemgetter(
+            'voltype', 'scatter', 'order', 'spacegrain', 'fig_size', 'rbffunc', 
+            'opacity')(self._refresh_params_default(
+                voltype=voltype, scatter=scatter, order=order, spacegrain=spacegrain, 
+                fig_size=fig_size, rbffunc=rbffunc, opacity=opacity))
 
 
         # Run method selected by graphtype
@@ -882,7 +881,7 @@ class Volatility(models.ImpliedVol):
         """
         
         # If inputs are not supplied, take existing values
-        voltype = itemgetter('voltype')(self._refresh_params_current(voltype=voltype))
+        voltype = itemgetter('voltype')(self._refresh_params_default(voltype=voltype))
         
         # Create a sorted list of the different number of option expiries
         dates = sorted(list(set(self.imp_vol_data['Expiry'])))
@@ -957,12 +956,14 @@ class Volatility(models.ImpliedVol):
         
         # Refresh inputs if not supplied
         # For some we want them to persist between queries so take existing object values
-        voltype, azim, elev = itemgetter('voltype', 'azim', 'elev')(self._refresh_params_current(voltype=voltype, 
-                                                                                                 azim=azim, 
-                                                                                                 elev=elev))
+        azim, elev = itemgetter(
+            'azim', 'elev')(self._refresh_params_current(
+                azim=azim, elev=elev))
         
         # For others we reset to default each time
-        fig_size = itemgetter('fig_size')(self._refresh_params_default(fig_size=fig_size))                                                                                            
+        voltype, fig_size = itemgetter(
+            'voltype', 'fig_size')(self._refresh_params_default(
+                voltype=voltype, fig_size=fig_size))                                                                                            
                     
         # Create figure and axis objects and format
         self.fig, ax = self._graph_format()
@@ -1030,17 +1031,19 @@ class Volatility(models.ImpliedVol):
 
         # Refresh inputs if not supplied
         # For some we want them to persist between queries so take existing object values
-        surfacetype, smoothing, voltype, colorscale, azim, elev, notebook = itemgetter('surfacetype', \
-            'smoothing', 'voltype', 'colorscale', 'azim', 'elev', 'notebook')(self._refresh_params_current( \
-                surfacetype=surfacetype, smoothing=smoothing, voltype=voltype, colorscale=colorscale, 
+        surfacetype, smoothing, colorscale, azim, elev, notebook = itemgetter(
+            'surfacetype', 'smoothing', 'colorscale', 'azim', 'elev', 
+            'notebook')(self._refresh_params_current(
+                surfacetype=surfacetype, smoothing=smoothing, colorscale=colorscale, 
                 azim=azim, elev=elev, notebook=notebook))
  
 
         # For others we reset to default each time
-        scatter, order, spacegrain, fig_size, rbffunc, opacity = itemgetter('scatter', 'order', \
-            'spacegrain', 'fig_size', 'rbffunc', 'opacity')(self._refresh_params_default(scatter=scatter, order=order, 
-                                                                              spacegrain=spacegrain, fig_size=fig_size, 
-                                                                              rbffunc=rbffunc, opacity=opacity))
+        voltype, scatter, order, spacegrain, fig_size, rbffunc, opacity = itemgetter(
+            'voltype', 'scatter', 'order', 'spacegrain', 'fig_size', 'rbffunc', 
+            'opacity')(self._refresh_params_default(
+                voltype=voltype, scatter=scatter, order=order, spacegrain=spacegrain, 
+                fig_size=fig_size, rbffunc=rbffunc, opacity=opacity))
         
         
         # Suppress mpl user warning about data containing nan values
@@ -1187,7 +1190,11 @@ class Volatility(models.ImpliedVol):
             
             # Initialize Figure object
             if scatter == True:
+                
+                # Set z to raw data points
                 z = self.data_3D[str(self.vols_dict[str(self.voltype)])] * 100
+                
+                # Create figure object with fitted surface and scatter points
                 fig = go.Figure(data=[go.Surface(x=x2, 
                                                  y=y2, 
                                                  z=z2,
@@ -1202,19 +1209,25 @@ class Volatility(models.ImpliedVol):
                                                                    "end": contour_y_stop, "size": contour_y_size, "color":"white"},  
                                                              "z": {"show": True, "start": contour_z_start, 
                                                                    "end": contour_z_stop, "size": contour_z_size}},
+                                                 
+                                                 # Set the surface opacity
                                                  opacity=opacity),
+                                      
+                                      # Plot scatter of unsmoothed data 
                                       go.Scatter3d(x=x,
                                                    y=y,
                                                    z=z,
                                                    mode='markers',
                                                    marker=dict(
+                                                       
+                                                       # Set size, color and opacity of each data point
                                                        size=2,
-                                                       color='red', # set color to an array/list of desired values
-                                                       colorscale='Viridis', # choose a colorscale
+                                                       color='red', 
                                                        opacity=0.9)
                                                    )])
 
             else:
+                # Create figure object with fitted surface
                 fig = go.Figure(data=[go.Surface(x=x2, 
                                                  y=y2, 
                                                  z=z2,
@@ -1229,6 +1242,8 @@ class Volatility(models.ImpliedVol):
                                                                    "end": contour_y_stop, "size": contour_y_size, "color":"white"},  
                                                              "z": {"show": True, "start": contour_z_start, 
                                                                    "end": contour_z_stop, "size": contour_z_size}},
+                                                 
+                                                 # Set the surface opacity
                                                  opacity=opacity)])
 
             # Set initial camera angle
