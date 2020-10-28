@@ -77,7 +77,8 @@ df_dict = {'vols_dict':{'bid':'Imp Vol - Bid',
 
 class Volatility(models.ImpliedVol):
     
-    def __init__(self, vols_dict=df_dict['vols_dict'], 
+    def __init__(self, 
+                 vols_dict=df_dict['vols_dict'], 
                  prices_dict=df_dict['prices_dict'], 
                  row_dict=df_dict['row_dict'], 
                  method_dict=df_dict['method_dict'], 
@@ -1018,12 +1019,11 @@ class Volatility(models.ImpliedVol):
             self.scatter_3D(voltype=voltype, azim=azim, elev=elev, 
                             fig_size=fig_size)
         if graphtype == 'surface':
-            self.surface_3D(surfacetype=surfacetype, smoothing=smoothing, 
-                            scatter=scatter, voltype=voltype, order=order, 
-                            spacegrain=spacegrain, azim=azim, elev=elev, 
-                            fig_size=fig_size, rbffunc=rbffunc, 
-                            colorscale=colorscale, opacity=opacity, 
-                            notebook=notebook)
+            self.surface_3D(
+                surfacetype=surfacetype, smoothing=smoothing, scatter=scatter, 
+                voltype=voltype, order=order, spacegrain=spacegrain, azim=azim, 
+                elev=elev, fig_size=fig_size, rbffunc=rbffunc, 
+                colorscale=colorscale, opacity=opacity, notebook=notebook)
             
     
     def line_graph(self, voltype=None):
@@ -1077,11 +1077,12 @@ class Volatility(models.ImpliedVol):
         for exp_date, tenor in tenor_date_dict.items():
             
             # Plot the specified voltype against strike
-            ax.plot(self.imp_vol_data[self.imp_vol_data['TTM']==tenor][
-                'Strike'], 
-                    self.imp_vol_data[self.imp_vol_data['TTM']==tenor][
-                        str(self.vols_dict[str(voltype)])] * 100, 
-                    label=str(exp_date)+' Expiry')
+            ax.plot(
+                self.imp_vol_data[self.imp_vol_data['TTM']==tenor]['Strike'], 
+                self.imp_vol_data[self.imp_vol_data['TTM']==tenor][
+                    str(self.vols_dict[str(voltype)])] * 100, 
+                label=str(exp_date)+' Expiry')
+        
         plt.grid(True)
         
         # Label axes 
@@ -1089,7 +1090,8 @@ class Volatility(models.ImpliedVol):
         ax.set_ylabel('Implied Volatility %', fontsize=ax_font_scale)
         
         # Set legend title and font sizes
-        ax.legend(title="Option Expiry", fontsize=ax_font_scale*0.6, 
+        ax.legend(title="Option Expiry", 
+                  fontsize=ax_font_scale*0.6, 
                   title_fontsize=ax_font_scale*0.8)
         
         # Specify title with ticker label, voltype and date and shift 
@@ -1151,8 +1153,8 @@ class Volatility(models.ImpliedVol):
         self.data_3D = self.imp_vol_data.copy()
         
         # Filter out any zero prices
-        self.data_3D = self.data_3D[self.data_3D[str(self.prices_dict[
-            str(self.voltype)])] != 0]
+        self.data_3D = self.data_3D[
+            self.data_3D[str(self.prices_dict[str(self.voltype)])] != 0]
         
         # Specify the 3 axis values
         x = self.data_3D['Strike']
@@ -1252,12 +1254,12 @@ class Volatility(models.ImpliedVol):
             self.data_3D = self.imp_vol_data.copy()
             
             # Filter out any zero prices
-            self.data_3D = self.data_3D[self.data_3D[str(self.prices_dict[
-                str(self.voltype)])] != 0]
+            self.data_3D = self.data_3D[self.data_3D[str(
+                self.prices_dict[str(self.voltype)])] != 0]
             
             # Set 'graph vol' to be the specified voltype
-            self.data_3D['Graph Vol'] = self.data_3D[str(self.vols_dict[
-                str(self.voltype)])]
+            self.data_3D['Graph Vol'] = self.data_3D[str(
+                self.vols_dict[str(self.voltype)])]
         
         # Otherwise, if smoothing is set to True
         else:
@@ -1269,8 +1271,8 @@ class Volatility(models.ImpliedVol):
             self.data_3D = self.imp_vol_data_smoothed.copy()
             
             # Filter out any zero prices
-            self.data_3D = self.data_3D[self.data_3D[str(self.prices_dict[
-                str(self.voltype)])] != 0]
+            self.data_3D = self.data_3D[self.data_3D[str(
+                self.prices_dict[str(self.voltype)])] != 0]
             
             # Set 'graph vol' to be the smoothed vol
             self.data_3D['Graph Vol'] = self.data_3D['Smoothed Vol']
@@ -1294,10 +1296,9 @@ class Volatility(models.ImpliedVol):
     
             # Create arrays across x and y-axes of equally spaced points 
             # from min to max values
-            x1, y1 = np.meshgrid(np.linspace(min(x), max(x), 
-                                             int(self.spacegrain)), 
-                                 np.linspace(min(y), max(y), 
-                                             int(self.spacegrain)))
+            x1, y1 = np.meshgrid(
+                np.linspace(min(x), max(x), int(self.spacegrain)), 
+                np.linspace(min(y), max(y), int(self.spacegrain)))
             
             # Map the z-axis with the scipy griddata method, applying 
             # cubic spline interpolation
