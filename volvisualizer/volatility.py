@@ -72,7 +72,8 @@ df_dict = {'vols_dict':{'bid':'Imp Vol - Bid',
            'rbffunc':'thin_plate',
            'colorscale':'BlueRed',
            'monthlies':False,
-           'opacity':1}
+           'opacity':1,
+           'surf':True}
 
 
 class Volatility(models.ImpliedVol):
@@ -104,7 +105,8 @@ class Volatility(models.ImpliedVol):
                  rbffunc=df_dict['rbffunc'], 
                  colorscale=df_dict['colorscale'], 
                  monthlies=df_dict['monthlies'], 
-                 opacity=df_dict['opacity'], 
+                 opacity=df_dict['opacity'],
+                 surf=df_dict['surf'],
                  df_dict=df_dict):
         
         # Inherit methods from models.ImpliedVol
@@ -194,6 +196,10 @@ class Volatility(models.ImpliedVol):
         
         # Opacity of 3D interactive graph
         self.opacity = opacity  
+        
+        # Plot surface in interactive graph
+        self.surf = surf
+        
         
     def _refresh_params_current(self, **kwargs):
         """
@@ -937,7 +943,7 @@ class Volatility(models.ImpliedVol):
     def visualize(self, graphtype=None, surfacetype=None, smoothing=None, 
                   scatter=None, voltype=None, order=None, spacegrain=None, 
                   azim=None, elev=None, fig_size=None, rbffunc=None, 
-                  colorscale=None, opacity=None, notebook=None):
+                  colorscale=None, opacity=None, surf=None, notebook=None):
         """
         Visualize the implied volatility as 2D linegraph, 3D scatter 
         or 3D surface
@@ -980,6 +986,8 @@ class Volatility(models.ImpliedVol):
             'BlueRed'
         opacity : Float
             opacity of 3D interactive graph
+        surf : Bool
+            Plot surface in interactive graph    
         notebook : Bool
             Whether interactive graph is run in Jupyter notebook or 
             IDE. The default is False.
@@ -993,8 +1001,8 @@ class Volatility(models.ImpliedVol):
         # Refresh inputs if not supplied
         # For some we want them to persist between queries so take existing 
         # object values
-        graphtype, surfacetype, smoothing, colorscale, azim, elev, \
-            notebook = itemgetter(
+        (graphtype, surfacetype, smoothing, colorscale, azim, elev, 
+         notebook) = itemgetter(
                 'graphtype', 'surfacetype', 'smoothing', 'colorscale', 'azim', 
                 'elev', 'notebook')(self._refresh_params_current(
                     graphtype=graphtype, surfacetype=surfacetype, 
@@ -1003,13 +1011,13 @@ class Volatility(models.ImpliedVol):
  
 
         # For others we reset to default each time
-        voltype, scatter, order, spacegrain, fig_size, rbffunc, \
-            opacity = itemgetter(
+        (voltype, scatter, order, spacegrain, fig_size, rbffunc, 
+         opacity, surf) = itemgetter(
                 'voltype', 'scatter', 'order', 'spacegrain', 'fig_size', 
-                'rbffunc', 'opacity')(self._refresh_params_default(
+                'rbffunc', 'opacity', 'surf')(self._refresh_params_default(
                     voltype=voltype, scatter=scatter, order=order, 
                     spacegrain=spacegrain, fig_size=fig_size, rbffunc=rbffunc,
-                    opacity=opacity))
+                    opacity=opacity, surf=surf))
 
 
         # Run method selected by graphtype
@@ -1023,7 +1031,8 @@ class Volatility(models.ImpliedVol):
                 surfacetype=surfacetype, smoothing=smoothing, scatter=scatter, 
                 voltype=voltype, order=order, spacegrain=spacegrain, azim=azim, 
                 elev=elev, fig_size=fig_size, rbffunc=rbffunc, 
-                colorscale=colorscale, opacity=opacity, notebook=notebook)
+                colorscale=colorscale, opacity=opacity, surf=surf, 
+                notebook=notebook)
             
     
     def line_graph(self, voltype=None):
@@ -1169,7 +1178,7 @@ class Volatility(models.ImpliedVol):
     def surface_3D(self, surfacetype=None, smoothing=None, scatter=None, 
                    voltype=None, order=None, spacegrain=None, azim=None, 
                    elev=None, fig_size=None, rbffunc=None, colorscale=None, 
-                   opacity=None, notebook=None):
+                   opacity=None, surf=None, notebook=None):
         """
         Displays a 3D surface plot of the implied vol surface against 
         strike and maturity
@@ -1209,7 +1218,9 @@ class Volatility(models.ImpliedVol):
             Colors used in plotly interactive graph. The default is 
             'BlueRed'
         opacity : Float
-            opacity of 3D interactive graph    
+            opacity of 3D interactive graph
+        surf : Bool
+            Plot surface in interactive graph
         notebook : Bool
             Whether interactive graph is run in Jupyter notebook or IDE. 
             The default is False.
@@ -1223,8 +1234,8 @@ class Volatility(models.ImpliedVol):
         # Refresh inputs if not supplied
         # For some we want them to persist between queries so take existing 
         # object values
-        surfacetype, smoothing, colorscale, azim, elev, \
-            notebook = itemgetter(
+        (surfacetype, smoothing, colorscale, azim, elev, 
+         notebook) = itemgetter(
                 'surfacetype', 'smoothing', 'colorscale', 'azim', 'elev', 
                 'notebook')(self._refresh_params_current(
                     surfacetype=surfacetype, smoothing=smoothing, 
@@ -1233,19 +1244,19 @@ class Volatility(models.ImpliedVol):
  
 
         # For others we reset to default each time
-        voltype, scatter, order, spacegrain, fig_size, rbffunc, \
-            opacity = itemgetter(
+        (voltype, scatter, order, spacegrain, fig_size, rbffunc, 
+         opacity, surf) = itemgetter(
                 'voltype', 'scatter', 'order', 'spacegrain', 'fig_size', 
-                'rbffunc', 'opacity')(self._refresh_params_default(
+                'rbffunc', 'opacity', 'surf')(self._refresh_params_default(
                     voltype=voltype, scatter=scatter, order=order, 
                     spacegrain=spacegrain, fig_size=fig_size, rbffunc=rbffunc, 
-                    opacity=opacity))
+                    opacity=opacity, surf=surf))
         
         
         # Suppress mpl user warning about data containing nan values
         warnings.filterwarnings("ignore", category=UserWarning, 
-                                message='Z contains NaN values. This \
-                                    may result in rendering artifacts.')
+                                message='Z contains NaN values. This '
+                                +'may result in rendering artifacts.')
         
         # If smoothing is set to False
         if smoothing == False:
@@ -1403,54 +1414,73 @@ class Volatility(models.ImpliedVol):
                 z2 = spline(x2, y2)
             
             # Initialize Figure object
-            if scatter == True:
+            if scatter:
                 
                 # Set z to raw data points
                 z = self.data_3D[str(self.vols_dict[str(self.voltype)])] * 100
                 
                 # Create figure object with fitted surface and scatter 
                 # points
-                fig = go.Figure(data=[
-                    go.Surface(x=x2, 
-                               y=y2, 
-                               z=z2,
-                               
-                               # Specify the colors to be used
-                               colorscale=colorscale,
-                               
-                               # Define the contours
-                               contours = {"x": {"show": True, "start": 
-                                                 contour_x_start, 
-                                                 "end": contour_x_stop, 
-                                                 "size": contour_x_size, 
-                                                 "color":"white"},            
-                                           "y": {"show": True, "start": 
-                                                 contour_y_start, 
-                                                 "end": contour_y_stop, 
-                                                 "size": contour_y_size, 
-                                                 "color":"white"},  
-                                           "z": {"show": True, "start": 
-                                                 contour_z_start, 
-                                                 "end": contour_z_stop, 
-                                                 "size": contour_z_size}},
-                               
-                               # Set the surface opacity
-                               opacity=opacity),
-                    
-                    # Plot scatter of unsmoothed data 
-                    go.Scatter3d(x=x,
-                                 y=y,
-                                 z=z,
-                                 mode='markers',
-                                 marker=dict(
-                                     
-                                     # Set size, color and opacity of 
-                                     # each data point
-                                     size=2,
-                                     color='red', 
-                                     opacity=0.9)
-                                 )])
+                if surf:
+                    fig = go.Figure(data=[
+                        go.Surface(x=x2, 
+                                   y=y2, 
+                                   z=z2,
+                                   
+                                   # Specify the colors to be used
+                                   colorscale=colorscale,
+                                   
+                                   # Define the contours
+                                   contours = {"x": {"show": True, "start": 
+                                                     contour_x_start, 
+                                                     "end": contour_x_stop, 
+                                                     "size": contour_x_size, 
+                                                     "color":"white"},            
+                                               "y": {"show": True, "start": 
+                                                     contour_y_start, 
+                                                     "end": contour_y_stop, 
+                                                     "size": contour_y_size, 
+                                                     "color":"white"},  
+                                               "z": {"show": True, "start": 
+                                                     contour_z_start, 
+                                                     "end": contour_z_stop, 
+                                                     "size": contour_z_size}},
+                                   
+                                   # Set the surface opacity
+                                   opacity=opacity),
+                        
+                        # Plot scatter of unsmoothed data 
+                        go.Scatter3d(x=x,
+                                     y=y,
+                                     z=z,
+                                     mode='markers',
+                                     marker=dict(
+                                         
+                                         # Set size, color and opacity of 
+                                         # each data point
+                                         size=2,
+                                         color='red', 
+                                         opacity=0.9)
+                                     )])
+                
+                # Plot just the scatter points
+                else:
+                    fig = go.Figure(data=[
+                        # Plot scatter of unsmoothed data 
+                        go.Scatter3d(x=x,
+                                     y=y,
+                                     z=z,
+                                     mode='markers',
+                                     marker=dict(
+                                         
+                                         # Set size, color and opacity of 
+                                         # each data point
+                                         size=2,
+                                         color='red', 
+                                         opacity=0.9)
+                                     )])
 
+            # Plot just the surface
             else:
                 # Create figure object with fitted surface
                 fig = go.Figure(data=[
