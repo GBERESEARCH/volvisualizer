@@ -503,8 +503,15 @@ class Volatility(models.ImpliedVol):
 
         # Convert 'Last Trade Date' to a DateTime variable
         self.data['Last Trade Date Raw'] = self.data['Last Trade Date']
-        self.data['Last Trade Date'] = pd.to_datetime(
-            self.data['Last Trade Date'], format='%Y-%m-%d %I:%M%p EDT')
+        
+        # Format date based on Eastern Daylight or Standard Time
+        try:
+            self.data['Last Trade Date'] = pd.to_datetime(
+                self.data['Last Trade Date'], format='%Y-%m-%d %I:%M%p EDT')
+        except:
+            self.data['Last Trade Date'] = pd.to_datetime(
+                self.data['Last Trade Date'], format='%Y-%m-%d %I:%M%p EST')
+            
         self.data['Last Trade Date'] = self.data['Last Trade Date'].apply(
             lambda x: x.replace(tzinfo=est))
 
