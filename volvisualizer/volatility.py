@@ -8,7 +8,7 @@ import pytz
 import requests
 import scipy as sp
 import time
-import volvisualizer.models as models
+import optionmodels.models as models
 import warnings
 from bs4 import BeautifulSoup
 from collections import Counter
