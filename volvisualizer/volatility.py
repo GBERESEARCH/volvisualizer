@@ -1094,9 +1094,9 @@ class Volatility(models.ImpliedVol):
             
             # Plot the specified voltype against strike
             ax.plot(
-                self.imp_vol_data[self.imp_vol_data['TTM']==tenor]['Strike'], 
-                self.imp_vol_data[self.imp_vol_data['TTM']==tenor][
-                    str(self.vols_dict[str(voltype)])] * 100, 
+                np.array(self.imp_vol_data[self.imp_vol_data['TTM']==tenor]['Strike']), 
+                np.array(self.imp_vol_data[self.imp_vol_data['TTM']==tenor][
+                    str(self.vols_dict[str(voltype)])] * 100), 
                 label=str(exp_date)+' Expiry')
         
         plt.grid(True)
