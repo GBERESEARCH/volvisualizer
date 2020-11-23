@@ -887,7 +887,7 @@ class Volatility(models.ImpliedVol):
         
         # Create a sorted list of the different number of strikes
         self.strikes_full = sorted(list(set((self.imp_vol_data[
-            'Strike'].astype(int)))))
+            'Strike'].astype(float)))))
         
         # create copy of implied vol data
         self.imp_vol_data_smoothed = self.imp_vol_data.copy()
