@@ -545,6 +545,9 @@ class Volatility(models.ImpliedVol):
         self.data['Open Interest'] = self.data['Open Interest'].replace(
             '-',0).astype(int)
 
+        # Clean Ask column 
+        self.data['Ask'] = self.data['Ask'].replace('-',0).astype(float)
+
         # Clean Bid column 
         self.data['Bid'] = self.data['Bid'].replace('-',0).astype(float)
 
@@ -678,6 +681,9 @@ class Volatility(models.ImpliedVol):
 
         """
         
+        # Suppress runtime warnings caused by bad vol data
+        warnings.filterwarnings("ignore", category=RuntimeWarning)
+        
         # For the chosen implied vol method and its method name
         for flag, func_name in self.method_dict.items():
             
@@ -687,12 +693,27 @@ class Volatility(models.ImpliedVol):
                 # for each of the prices: bid, mid, ask, last
                 for input_row, output_row in self.row_dict.items():
                     
-                    # populate the column using the chosen implied 
-                    # vol method (using getattr() to select 
-                    # dynamically)
-                    row[output_row] = getattr(self, func_name)(
-                        S=S, K=K, T=row['TTM'], r=r, q=q, cm=row[input_row], 
-                        epsilon=epsilon, option=option, timing=False)
+                    try:
+                        # populate the column using the chosen implied 
+                        # vol method (using getattr() to select 
+                        # dynamically)
+                        # check if n/a value is returned and print error 
+                        # message if so
+                        output = getattr(self, func_name)(
+                            S=S, K=K, T=row['TTM'], r=r, q=q, cm=row[input_row], 
+                            epsilon=epsilon, option=option, timing=False)
+                        
+                        output = float(output)
+                        row[output_row] = output
+                    
+                    except:
+                        print("Error with option: Strike="+str(K)+
+                                  " TTM="+str(round(row['TTM'], 3))+
+                                  " vol="+str(row[input_row])+
+                                  " option="+option)                            
+        
+        # Return warnings to default setting
+        warnings.filterwarnings("default", category=RuntimeWarning)
         
         return row
     
