@@ -9,8 +9,10 @@ import requests
 import scipy as sp
 import time
 import optionmodels.models as models
+import volvisualizer.volatility_params as vp
 import warnings
 from bs4 import BeautifulSoup
+from lxml import html
 from collections import Counter
 from datetime import date
 from mpl_toolkits.mplot3d import Axes3D
@@ -18,187 +20,49 @@ from operator import itemgetter
 from plotly.offline import plot
 from scipy.interpolate import griddata
 
-                                                                               
-# Dictionary of default parameters
-df_dict = {'vols_dict':{'bid':'Imp Vol - Bid',
-                        'mid':'Imp Vol - Mid',
-                        'ask':'Imp Vol - Ask',
-                        'last':'Imp Vol - Last'},
-           'prices_dict':{'bid':'Bid',
-                          'mid':'Mid',
-                          'ask':'Ask',
-                          'last':'Last Price'},
-           'row_dict':{'Bid':'Imp Vol - Bid',
-                       'Mid':'Imp Vol - Mid',
-                       'Ask':'Imp Vol - Ask',
-                       'Last Price':'Imp Vol - Last'},
-           'method_dict':{'nr':'implied_vol_newton_raphson',
-                          'bisection':'implied_vol_bisection',
-                          'naive':'implied_vol_naive'},
-           'mpl_line_params':{'axes.edgecolor':'black',
-                              'axes.titlepad':20,
-                              'axes.xmargin':0.05,
-                              'axes.ymargin':0.05,
-                              'axes.linewidth':2,
-                              'axes.facecolor':(0.8, 0.8, 0.9, 0.5),
-                              'xtick.major.pad':10,
-                              'ytick.major.pad':10,
-                              'lines.linewidth':3.0,
-                              'grid.color':'black',
-                              'grid.linestyle':':'},
-           'mpl_3D_params':{'axes.facecolor':'w',
-                            'axes.labelcolor':'k',
-                            'axes.edgecolor':'w',
-                            'lines.linewidth':0.5,
-                            'xtick.labelbottom':True,
-                            'ytick.labelleft':True},
-           'wait':5,
-           'graphtype':'line', 
-           'surfacetype':'mesh', 
-           'smoothing':False, 
-           'scatter':False, 
-           'voltype':'last',
-           'smoothopt':6,
-           'notebook':False,
-           'r':0.005, 
-           'q':0, 
-           'epsilon':0.001, 
-           'method':'nr',
-           'order':3,
-           'spacegrain':100,
-           'azim':-50,
-           'elev':20,
-           'fig_size':(15, 12),
-           'rbffunc':'thin_plate',
-           'colorscale':'BlueRed',
-           'monthlies':False,
-           'opacity':1,
-           'surf':True}
-
-
 class Volatility(models.ImpliedVol):
     
-    def __init__(self, 
-                 vols_dict=df_dict['vols_dict'], 
-                 prices_dict=df_dict['prices_dict'], 
-                 row_dict=df_dict['row_dict'], 
-                 method_dict=df_dict['method_dict'], 
-                 mpl_line_params=df_dict['mpl_line_params'], 
-                 mpl_3D_params=df_dict['mpl_3D_params'], 
-                 wait=df_dict['wait'], 
-                 graphtype=df_dict['graphtype'], 
-                 surfacetype=df_dict['surfacetype'], 
-                 smoothing=df_dict['smoothing'], 
-                 scatter=df_dict['scatter'], 
-                 voltype=df_dict['voltype'], 
-                 smoothopt=df_dict['smoothopt'], 
-                 notebook=df_dict['notebook'], 
-                 r=df_dict['r'], 
-                 q=df_dict['q'], 
-                 epsilon=df_dict['epsilon'], 
-                 method=df_dict['method'], 
-                 order=df_dict['order'], 
-                 spacegrain=df_dict['spacegrain'], 
-                 azim=df_dict['azim'], 
-                 elev=df_dict['elev'], 
-                 fig_size=df_dict['fig_size'], 
-                 rbffunc=df_dict['rbffunc'], 
-                 colorscale=df_dict['colorscale'], 
-                 monthlies=df_dict['monthlies'], 
-                 opacity=df_dict['opacity'],
-                 surf=df_dict['surf'],
-                 df_dict=df_dict):
+    def __init__(self):
         
         # Inherit methods from models.ImpliedVol
         models.ImpliedVol.__init__(self)
         
-        # Dictionary of default parameters
-        self.df_dict = df_dict 
+        # Dictionary of parameter defaults
+        self.vol_params_dict = vp.vol_params_dict 
         
+        # Initialize fixed default parameters
+        self._init_fixed_params()
+        
+        
+    def _init_fixed_params(self):
+        """
+        Initialize fixed default parameters using values from parameters dict
+
+        Returns
+        -------
+        Various parameters and dictionaries to the object.
+
+        """
         # Dictionary of implied vol fields used in graph methods
-        self.vols_dict = vols_dict 
+        self.vols_dict = self.vol_params_dict['df_vols_dict'] 
         
         # Dictionary of price fields used for filtering zero prices in 
         # graph methods
-        self.prices_dict = prices_dict 
+        self.prices_dict = self.vol_params_dict['df_prices_dict'] 
         
         # Dictionary of implied vol fields used in implied vol 
         # calculation
-        self.row_dict = row_dict 
+        self.row_dict = self.vol_params_dict['df_row_dict'] 
         
         # Dictionary of implied vol calculation methods used in 
         # implied vol calculation
-        self.method_dict = method_dict 
+        self.method_dict = self.vol_params_dict['df_method_dict'] 
         
         # Parameters to overwrite mpl_style defaults for line graphs
-        self.mpl_line_params = mpl_line_params 
+        self.mpl_line_params = self.vol_params_dict['df_mpl_line_params'] 
         
         # Parameters to overwrite mpl_style defaults for 3D graphs
-        self.mpl_3D_params = mpl_3D_params 
-        
-        # Time to wait between each url query
-        self.wait = wait 
-        
-        # Type of 3D graph
-        self.surfacetype = surfacetype 
-        
-        # Whether to graph implied vols smoothed using polyfit
-        self.smoothing = smoothing 
-        
-        # Whether to include scatter points in 3D meshplot
-        self.scatter = scatter 
-        
-        # Vol to use - Bid, Mid, Ask or Last
-        self.voltype = voltype 
-        
-        # Min number of options to include per tenor when applying 
-        # smoothing
-        self.smoothopt = smoothopt 
-        
-        # Whether interactive graph is run in Jupyter notebook or IDE
-        self.notebook = notebook 
-        
-        # Interest Rate
-        self.r = r 
-        
-        # Dividend Yield
-        self.q = q 
-        
-        # Degree of precision that implied vol calculated to
-        self.epsilon = epsilon 
-        
-        # Choice of implied vol method
-        self.method = method 
-        
-        # Polynomial order used in smoothing
-        self.order = order 
-        
-        # Number of points in each axis linspace argument for 3D graphs
-        self.spacegrain = spacegrain 
-        
-        # L-R view angle for 3D graphs
-        self.azim = azim 
-        
-        # Elevation view angle for 3D graphs
-        self.elev = elev 
-        
-        # 3D graph size
-        self.fig_size = fig_size 
-        
-        # Radial basis function used in interpolation
-        self.rbffunc = rbffunc 
-        
-        # Colors used in plotly interactive graph
-        self.colorscale = colorscale 
-        
-        # Whether to filter expiry dates to just 3rd Friday of month
-        self.monthlies = monthlies 
-        
-        # Opacity of 3D interactive graph
-        self.opacity = opacity  
-        
-        # Plot surface in interactive graph
-        self.surf = surf
+        self.mpl_3D_params = self.vol_params_dict['df_mpl_3D_params'] 
         
         
     def _refresh_params_current(self, **kwargs):
@@ -226,9 +90,14 @@ class Volatility(models.ImpliedVol):
             # If a value for a parameter has not been provided
             if v is None:
                 
-                # Set it to the object value and assign to the object 
-                # and to input dictionary
-                v = self.__dict__[k]
+                # Try to set to the object value and assign to the object 
+                # and to input dictionary otherwise use default value
+                try:
+                    v = self.__dict__[k]
+                except:
+                    v = self.vol_params_dict['df_'+str(k)]
+                    self.__dict__[k] = v
+                
                 kwargs[k] = v 
             
             # If the value has been provided as an input, assign this 
@@ -266,7 +135,7 @@ class Volatility(models.ImpliedVol):
                 
                 # Set it to the default value and assign to the object 
                 # and to input dictionary
-                v = df_dict[str(k)]
+                v = self.vol_params_dict['df_'+str(k)]
                 self.__dict__[k] = v
                 kwargs[k] = v 
             
@@ -277,68 +146,8 @@ class Volatility(models.ImpliedVol):
                       
         return kwargs        
     
-    
-    def extracturls(self, ticker):
-        """
-        Extract the URL for each of the listed option on Yahoo Finance 
-        for the given ticker. 
-
-        Parameters
-        ----------
-        ticker : Str
-            Yahoo ticker (Reuters RIC) for the stock.
-
-        Returns
-        -------
-        Dict
-            Dictionary of dates and URLs.
-
-        """
         
-        # Define the stock root webpage
-        url = 'https://finance.yahoo.com/quote/'+ticker+'/options?p='+ticker
-        
-        # Create a requests object to extract data from the url
-        r = requests.get(url)
-        
-        # Collect the text fromthis object
-        html_doc = r.text
-        
-        # Use Beautiful Soup to parse this
-        soup = BeautifulSoup(html_doc, features="lxml")
-        
-        # Create a list of all the option dates 
-        option_dates = [a.get_text() for a in soup.find_all('option')]
-        
-        # Convert this list from string to datetimes 
-        dates_list = [dt.datetime.strptime(date, "%B %d, %Y").date() for date 
-                      in option_dates]
-        
-        # Convert back to strings in the required format
-        str_dates = [date_obj.strftime('%Y-%m-%d') for date_obj in dates_list]
-        
-        # Create a list of all the unix dates used in the url for each 
-        # of these dates
-        option_pages = [a.attrs['value'] for a in soup.find_all('option')]
-        
-        # Combine the dates and unixdates in a dictionary
-        optodict = dict(zip(str_dates, option_pages))
-        
-        # Create an empty dictionary
-        self.url_dict = {}
-        
-        # For each date and unixdate in the first dictionary
-        for date_val, page in optodict.items():
-            
-            # Create an entry with the date as key and the url plus 
-            # unix date as value
-            self.url_dict[date_val] = str('https://finance.yahoo.com/quote/'+
-                                          ticker+'/options?date='+page)
-        
-        return self    
-    
-        
-    def extractoptions(self, url_dict=None, wait=None):
+    def extractoptions(self, ticker=None, wait=None):
         """
         Extract option data from Yahoo Finance
 
@@ -357,17 +166,20 @@ class Volatility(models.ImpliedVol):
         """    
         
         # If inputs are not supplied, take existing values
-        url_dict, wait = itemgetter(
-            'url_dict', 'wait')(self._refresh_params_current(
-                url_dict=url_dict, wait=wait))
+        ticker, wait = itemgetter(
+            'ticker', 'wait')(self._refresh_params_current(
+                ticker=ticker, wait=wait))
+        
+        # Extract dictionary of option dates and urls        
+        self.url_dict = self._extracturls(ticker)                
                 
         # Create an empty dictionary
-        df_dict = {}
+        option_dict = {}
         self.url_except_dict = {}
         
         # each url needs to have an option expiry date associated with
         # it in the url dict 
-        for input_date, url in url_dict.items():
+        for input_date, url in self.url_dict.items():
             
             # requests function downloads the data            
             html = requests.get(url).content
@@ -378,11 +190,11 @@ class Volatility(models.ImpliedVol):
             # if data exists
             try:
                 # read html data into a DataFrame 
-                df = pd.read_html(html)
+                option_frame = pd.read_html(html)
                 
                 # Add this DataFrame to the default dictionary, named 
                 # with the expiry date it refers to
-                df_dict[input_date] = df
+                option_dict[input_date] = option_frame
             
             # otherwise collect dictionary of exceptions
             except:
@@ -393,7 +205,7 @@ class Volatility(models.ImpliedVol):
         
         # Make a list of all the dates of the DataFrames just stored 
         # in the default dictionary
-        date_list = list(df_dict.keys()) 
+        date_list = list(option_dict.keys()) 
         
         # Create list to store exceptions
         self.opt_except_list = []
@@ -403,14 +215,14 @@ class Volatility(models.ImpliedVol):
             
             try:
                 # The first entry is 'calls'
-                calls = df_dict[input_date][0]
+                calls = option_dict[input_date][0]
                 
                 # Create a column designating these as calls
                 calls['Option Type'] = 'call'
 
                 try:
                     # The second entry is 'puts'
-                    puts = df_dict[input_date][1]
+                    puts = option_dict[input_date][1]
                     
                     # Create a column designating these as puts
                     puts['Option Type'] = 'put'
@@ -436,7 +248,7 @@ class Volatility(models.ImpliedVol):
                 
                 try:
                     # The second entry is 'puts'
-                    puts = df_dict[input_date][1]
+                    puts = option_dict[input_date][1]
                     
                     # Create a column designating these as puts
                     puts['Option Type'] = 'put'
@@ -453,6 +265,67 @@ class Volatility(models.ImpliedVol):
         
         return self
 
+
+    def _extracturls(self, ticker):
+        """
+        Extract the URL for each of the listed option on Yahoo Finance 
+        for the given ticker. 
+
+        Parameters
+        ----------
+        ticker : Str
+            Yahoo ticker (Reuters RIC) for the stock.
+
+        Returns
+        -------
+        Dict
+            Dictionary of dates and URLs.
+
+        """
+        self.ticker = ticker
+        
+        # Define the stock root webpage
+        url = 'https://finance.yahoo.com/quote/'+ticker+'/options?p='+ticker
+        
+        # Create a requests object to extract data from the url
+        self.requestslink = requests.get(url)
+        
+        # Collect the text fromthis object
+        html_doc = self.requestslink.text
+        
+        # Use Beautiful Soup to parse this
+        soup = BeautifulSoup(html_doc, features="lxml")
+        
+        # Create a list of all the option dates 
+        option_dates = [a.get_text() for a in soup.find_all('option')]
+        
+        # Convert this list from string to datetimes 
+        dates_list = [dt.datetime.strptime(date, "%B %d, %Y").date() for date 
+                      in option_dates]
+        
+        # Convert back to strings in the required format
+        str_dates = [date_obj.strftime('%Y-%m-%d') for date_obj in dates_list]
+        
+        # Create a list of all the unix dates used in the url for each 
+        # of these dates
+        option_pages = [a.attrs['value'] for a in soup.find_all('option')]
+        
+        # Combine the dates and unixdates in a dictionary
+        optodict = dict(zip(str_dates, option_pages))
+        
+        # Create an empty dictionary
+        url_dict = {}
+        
+        # For each date and unixdate in the first dictionary
+        for date_val, page in optodict.items():
+            
+            # Create an entry with the date as key and the url plus 
+            # unix date as value
+            url_dict[date_val] = str('https://finance.yahoo.com/quote/'+
+                                          ticker+'/options?date='+page)
+        
+        return url_dict    
+    
 
     def transform(self, start_date, lastmins=None, mindays=None, minopts=None, 
                   volume=None, openint=None, monthlies=None):    
@@ -648,7 +521,177 @@ class Volatility(models.ImpliedVol):
                     self.data = self.data[self.data['Days'] != days_to_expiry] 
          
         return self
+
+
+    def combine(self, ticker_label, spot=None, put_strikes=None, 
+                call_strikes=None, r=None, q=None, epsilon=None, method=None):
+        """
+        Calculate implied volatilities for specified put and call 
+        strikes and combine.
+
+        Parameters
+        ----------
+        ticker_label : Str
+            Stcok Ticker.
+        put_strikes : List
+            Range of put strikes to calculate implied volatility for.
+        call_strikes : List
+            Range of call strikes to calculate implied volatility for.
+        spot : Float
+            Underlying reference level.
+        r : Float
+            Interest Rate. The default is 0.005.
+        q : Float
+            Dividend Yield. The default is 0.
+        epsilon : Float
+            Degree of precision to return implied vol. The default 
+            is 0.001.
+        method : Str
+            Implied Vol method; 'nr', 'bisection' or 'naive'. The 
+            default is 'nr'.
+
+        Returns
+        -------
+        DataFrame
+            DataFrame of Option prices.
+
+        """
+        
+        # If inputs are not supplied, take default values
+        r, q, epsilon, method = itemgetter(
+            'r', 'q', 'epsilon', 'method')(self._refresh_params_default(
+                r=r, q=q, epsilon=epsilon, method=method))
+        
+        # Calculate strikes if strikes and spot price are not supplied.          
+        spot, put_strikes, call_strikes = self._create_strike_range(
+            spot, put_strikes, call_strikes)        
+                
+        # create copy of filtered data
+        input_data = self.data.copy()
+        
+        # Assign ticker label to the object
+        self.ticker_label = ticker_label
+        
+        # Create empty list and dictionary for storing options
+        opt_list = []
+        opt_dict = {}
+        
+        # For each put strike price
+        for strike in put_strikes:
+            
+            # Assign an option name of ticker plus strike 
+            opt_name = ticker_label+'_'+str(strike)
+            
+            # store the implied vol results for that strike in the 
+            # option dictionary 
+            opt_dict[opt_name] = self._imp_vol_apply(
+                input_data=input_data, S=spot, K=strike, r=r, q=q, 
+                epsilon=epsilon, option='put', method=method)
+            
+            # store the implied vol results for that strike in the 
+            # option list
+            opt_list.append(opt_dict[opt_name])
+            
+            print('Put option: ', opt_name)
+        
+        # For each put strike price    
+        for strike in call_strikes:
+            
+            # Assign an option name of ticker plus strike 
+            opt_name = ticker_label+'_'+str(strike)
+            
+            # store the implied vol results DataFrame for that strike 
+            # in the option dictionary 
+            opt_dict[opt_name] = self._imp_vol_apply(
+                input_data=input_data, S=spot, K=strike, r=r, q=q, 
+                epsilon=epsilon, option='call', method=method)
+            
+            # store the implied vol results DataFrame for that strike 
+            # in the option list
+            opt_list.append(opt_dict[opt_name])    
+        
+            print('Call option: ', opt_name)
+        
+        # Concatenate all the option results into a single DataFrame
+        self.imp_vol_data = pd.concat(opt_list)
     
+        return self
+
+
+    def _create_strike_range(self, spot, put_strikes, call_strikes):
+        
+        # Set the distance between put strikes as 25 for SPX or 10 otherwise
+        if self.ticker == '^SPX':
+            divisor = 25
+        else:
+            divisor = 10
+        
+        # Extract the spot level from the html data    
+        if spot is None:
+            tree = html.fromstring(self.requestslink.content)
+            priceparse = tree.xpath(
+                '//span[@class="Trsdu(0.3s) Fw(b) Fz(36px) Mb(-4px) D(ib)"]/text()')
+            spot = float([str(p) for p in priceparse][0].replace(',',''))
+
+        # Calculate the point to switch from put to call options
+        roundspot = round(spot / divisor) * divisor
+        
+        # Calculate put options from 1/2 spot level
+        if put_strikes is None:
+            put_min = round(spot / 2 / divisor) * divisor
+            put_strikes = list(range(put_min, roundspot, divisor))
+
+        # Calculate call options to twice the spot level
+        # Set the distance between strikes at twice the size of the puts
+        if call_strikes is None:
+            call_max = round(spot * 2 / divisor) * divisor
+            call_strikes = list(range(roundspot, call_max, divisor))
+
+        return spot, put_strikes, call_strikes
+        
+
+    def _imp_vol_apply(self, input_data, S, K, r, q, epsilon, option, method):
+        """
+        Apply _implied_vol_by_row method to each row of a DataFrame.
+
+        Parameters
+        ----------
+        input_data : DataFrame
+            DataFrame of Option prices.
+        S : Float
+            Stock Price.
+        K : Float
+            Strike Price.
+        r : Float
+            Interest Rate. The default is 0.005.
+        q : Float
+            Dividend Yield. The default is 0.
+        epsilon : Float
+            Degree of precision to return implied vol. The default is 
+            0.001.
+        option : Str
+            Option type; 'put' or 'call'.
+        method : Str
+            Implied Vol method; 'nr', 'bisection' or 'naive'. The 
+            default is 'nr'.
+
+        Returns
+        -------
+        input_data : DataFrame
+            DataFrame of Option prices.
+
+        """
+        
+        # Filter data by strike and option type
+        input_data = input_data[(input_data['Strike'] == K) & (
+            input_data['Option Type'] == option)]
+        
+        # Apply implied vol method to each row
+        input_data = input_data.apply(lambda x: self._imp_vol_by_row(
+            x, S, K, r, q, epsilon, option, method), axis=1)
+        
+        return input_data         
+        
 
     def _imp_vol_by_row(self, row, S, K, r, q, epsilon, option, method):
         """
@@ -700,8 +743,9 @@ class Volatility(models.ImpliedVol):
                         # check if n/a value is returned and print error 
                         # message if so
                         output = getattr(self, func_name)(
-                            S=S, K=K, T=row['TTM'], r=r, q=q, cm=row[input_row], 
-                            epsilon=epsilon, option=option, timing=False)
+                            S=S, K=K, T=row['TTM'], r=r, q=q, 
+                            cm=row[input_row], epsilon=epsilon, option=option, 
+                            timing=False)
                         
                         output = float(output)
                         row[output_row] = output
@@ -716,159 +760,7 @@ class Volatility(models.ImpliedVol):
         warnings.filterwarnings("default", category=RuntimeWarning)
         
         return row
-    
 
-    def _imp_vol_apply(self, input_data, S, K, r, q, epsilon, option, method):
-        """
-        Apply _implied_vol_by_row method to each row of a DataFrame.
-
-        Parameters
-        ----------
-        input_data : DataFrame
-            DataFrame of Option prices.
-        S : Float
-            Stock Price.
-        K : Float
-            Strike Price.
-        r : Float
-            Interest Rate. The default is 0.005.
-        q : Float
-            Dividend Yield. The default is 0.
-        epsilon : Float
-            Degree of precision to return implied vol. The default is 
-            0.001.
-        option : Str
-            Option type; 'put' or 'call'.
-        method : Str
-            Implied Vol method; 'nr', 'bisection' or 'naive'. The 
-            default is 'nr'.
-
-        Returns
-        -------
-        input_data : DataFrame
-            DataFrame of Option prices.
-
-        """
-        
-        # Filter data by strike and option type
-        input_data = input_data[(input_data['Strike'] == K) & (
-            input_data['Option Type'] == option)]
-        
-        # Apply implied vol method to each row
-        input_data = input_data.apply(lambda x: self._imp_vol_by_row(
-            x, S, K, r, q, epsilon, option, method), axis=1)
-        
-        return input_data         
-    
-    
-    def combine(self, ticker_label, put_strikes, call_strikes, spot, 
-                r=None, q=None, epsilon=None, method=None):
-        """
-        Calculate implied volatilities for specified put and call 
-        strikes and combine.
-
-        Parameters
-        ----------
-        ticker_label : Str
-            Stcok Ticker.
-        put_strikes : List
-            Range of put strikes to calculate implied volatility for.
-        call_strikes : List
-            Range of call strikes to calculate implied volatility for.
-        spot : Float
-            Underlying reference level.
-        r : Float
-            Interest Rate. The default is 0.005.
-        q : Float
-            Dividend Yield. The default is 0.
-        epsilon : Float
-            Degree of precision to return implied vol. The default 
-            is 0.001.
-        method : Str
-            Implied Vol method; 'nr', 'bisection' or 'naive'. The 
-            default is 'nr'.
-
-        Returns
-        -------
-        DataFrame
-            DataFrame of Option prices.
-
-        """
-        
-        # If inputs are not supplied, take default values
-        r, q, epsilon, method = itemgetter(
-            'r', 'q', 'epsilon', 'method')(self._refresh_params_default(
-                r=r, q=q, epsilon=epsilon, method=method))
-        
-        # create copy of filtered data
-        input_data = self.data.copy()
-        
-        # Assign ticker label to the object
-        self.ticker_label = ticker_label
-        
-        # Create empty list and dictionary for storing options
-        self.opt_list = []
-        self.opt_dict = {}
-        
-        # For each put strike price
-        for strike in put_strikes:
-            
-            # Assign an option name of ticker plus strike 
-            opt_name = ticker_label+'_'+str(strike)
-            
-            # store the implied vol results for that strike in the 
-            # option dictionary 
-            self.opt_dict[opt_name] = self._imp_vol_apply(
-                input_data=input_data, S=spot, K=strike, r=r, q=q, 
-                epsilon=epsilon, option='put', method=method)
-            
-            # store the implied vol results for that strike in the 
-            # option list
-            self.opt_list.append(self.opt_dict[opt_name])
-        
-        # For each put strike price    
-        for strike in call_strikes:
-            
-            # Assign an option name of ticker plus strike 
-            opt_name = ticker_label+'_'+str(strike)
-            
-            # store the implied vol results DataFrame for that strike 
-            # in the option dictionary 
-            self.opt_dict[opt_name] = self._imp_vol_apply(
-                input_data=input_data, S=spot, K=strike, r=r, q=q, 
-                epsilon=epsilon, option='call', method=method)
-            
-            # store the implied vol results DataFrame for that strike 
-            # in the option list
-            self.opt_list.append(self.opt_dict[opt_name])    
-        
-        # Concatenate all the option results into a single DataFrame
-        self.imp_vol_data = pd.concat(self.opt_list)
-    
-        return self
-    
-
-    def _vol_map(self, row):
-        """
-        Map value calculated in smooth surface DataFrame to 
-        'Smoothed Vol' column.
-
-        Parameters
-        ----------
-        row : Array
-            Each row in the DataFrame.
-
-        Returns
-        -------
-        row : Array
-            Each row in the DataFrame.
-
-        """
-        row['Smoothed Vol'] = self.smooth_surf.loc[row['Strike'], 
-                                                   str(row['Days'])]
-        
-        return row
-       
     
     def smooth(self, order=None, voltype=None, smoothopt=None):
         """
@@ -967,6 +859,28 @@ class Volatility(models.ImpliedVol):
 
         return self
 
+
+    def _vol_map(self, row):
+        """
+        Map value calculated in smooth surface DataFrame to 
+        'Smoothed Vol' column.
+
+        Parameters
+        ----------
+        row : Array
+            Each row in the DataFrame.
+
+        Returns
+        -------
+        row : Array
+            Each row in the DataFrame.
+
+        """
+        row['Smoothed Vol'] = self.smooth_surf.loc[row['Strike'], 
+                                                   str(row['Days'])]
+        
+        return row
+       
     
     def visualize(self, graphtype=None, surfacetype=None, smoothing=None, 
                   scatter=None, voltype=None, order=None, spacegrain=None, 
@@ -1098,14 +1012,14 @@ class Volatility(models.ImpliedVol):
         
         plt.style.use('seaborn-darkgrid')
         plt.rcParams.update(self.mpl_line_params)
-        self.fig_size = (12, 9)
+        fig_size = (12, 9)
         
         # Create figure, axis objects        
-        fig, ax = plt.subplots(figsize=self.fig_size)
+        fig, ax = plt.subplots(figsize=fig_size)
         
         # Create values that scale fonts with fig_size
-        ax_font_scale = int(round(self.fig_size[0] * 1.5))
-        title_font_scale = int(round(self.fig_size[0] * 2))
+        ax_font_scale = int(round(fig_size[0] * 1.5))
+        title_font_scale = int(round(fig_size[0] * 2))
         
         # Set fontsize of axis ticks
         ax.tick_params(axis='both', which='major', labelsize=ax_font_scale)
@@ -1115,7 +1029,8 @@ class Volatility(models.ImpliedVol):
             
             # Plot the specified voltype against strike
             ax.plot(
-                np.array(self.imp_vol_data[self.imp_vol_data['TTM']==tenor]['Strike']), 
+                np.array(self.imp_vol_data[self.imp_vol_data['TTM']==tenor][
+                    'Strike']), 
                 np.array(self.imp_vol_data[self.imp_vol_data['TTM']==tenor][
                     str(self.vols_dict[str(voltype)])] * 100), 
                 label=str(exp_date)+' Expiry')
@@ -1133,7 +1048,7 @@ class Volatility(models.ImpliedVol):
         
         # Specify title with ticker label, voltype and date and shift 
         # away from chart
-        st = fig.suptitle(str(self.ticker_label.upper())+
+        st = fig.suptitle(str(self.ticker_label)+
                           ' Implied Volatility '+str(voltype.title())+
                           ' Price '+str(self.start_date), 
                           fontsize=title_font_scale, 
@@ -1184,19 +1099,20 @@ class Volatility(models.ImpliedVol):
                 voltype=voltype, fig_size=fig_size))                                                                                            
                     
         # Create figure and axis objects and format
-        self.fig, ax = self._graph_format()
+        fig, ax = self._graph_format(fig_size=fig_size, azim=azim, elev=elev, 
+                                     voltype=voltype)
         
         # Create copy of data
         self.data_3D = self.imp_vol_data.copy()
         
         # Filter out any zero prices
         self.data_3D = self.data_3D[
-            self.data_3D[str(self.prices_dict[str(self.voltype)])] != 0]
+            self.data_3D[str(self.prices_dict[str(voltype)])] != 0]
         
         # Specify the 3 axis values
         x = self.data_3D['Strike']
         y = self.data_3D['TTM'] * 365
-        z = self.data_3D[str(self.vols_dict[str(self.voltype)])] * 100
+        z = self.data_3D[str(self.vols_dict[str(voltype)])] * 100
         
         # Display scatter, specifying colour to vary with z-axis and use 
         # colormap 'viridis'
@@ -1294,24 +1210,24 @@ class Volatility(models.ImpliedVol):
             
             # Filter out any zero prices
             self.data_3D = self.data_3D[self.data_3D[str(
-                self.prices_dict[str(self.voltype)])] != 0]
+                self.prices_dict[str(voltype)])] != 0]
             
             # Set 'graph vol' to be the specified voltype
             self.data_3D['Graph Vol'] = self.data_3D[str(
-                self.vols_dict[str(self.voltype)])]
+                self.vols_dict[str(voltype)])]
         
         # Otherwise, if smoothing is set to True
         else:
             
             # Apply the smoothing function to the specified voltype
-            self.smooth(order=order, voltype=self.voltype)
+            self.smooth(order=order, voltype=voltype)
             
             # Create copy of implied vol data
             self.data_3D = self.imp_vol_data_smoothed.copy()
             
             # Filter out any zero prices
             self.data_3D = self.data_3D[self.data_3D[str(
-                self.prices_dict[str(self.voltype)])] != 0]
+                self.prices_dict[str(voltype)])] != 0]
             
             # Set 'graph vol' to be the smoothed vol
             self.data_3D['Graph Vol'] = self.data_3D['Smoothed Vol']
@@ -1325,7 +1241,7 @@ class Volatility(models.ImpliedVol):
         if surfacetype == 'trisurf':
             
             # Create figure and axis objects and format
-            self.fig, ax = self._graph_format()
+            fig, ax = self._graph_format(fig_size=fig_size, azim=azim, elev=elev, voltype=voltype)
            
             # Display triangular surface plot, using colormap 'viridis'
             ax.plot_trisurf(x, y, z, cmap='viridis', edgecolor='none')
@@ -1345,7 +1261,7 @@ class Volatility(models.ImpliedVol):
                           method='cubic')
             
             # Create figure and axis objects and format
-            self.fig, ax = self._graph_format()
+            fig, ax = self._graph_format(fig_size=fig_size, azim=azim, elev=elev, voltype=voltype)
                        
             # Plot the surface
             ax.plot_surface(x1, y1, z1)
@@ -1376,7 +1292,7 @@ class Volatility(models.ImpliedVol):
             z2 = spline(x2, y2)
             
             # Create figure and axis objects and format
-            self.fig, ax = self._graph_format()
+            fig, ax = self._graph_format(fig_size=fig_size, azim=azim, elev=elev, voltype=voltype)
             
             # Plot the surface
             ax.plot_wireframe(x2, y2, z2)
@@ -1445,7 +1361,7 @@ class Volatility(models.ImpliedVol):
             if scatter:
                 
                 # Set z to raw data points
-                z = self.data_3D[str(self.vols_dict[str(self.voltype)])] * 100
+                z = self.data_3D[str(self.vols_dict[str(voltype)])] * 100
                 
                 # Create figure object with fitted surface and scatter 
                 # points
@@ -1568,7 +1484,7 @@ class Volatility(models.ImpliedVol):
                                 zaxis_title='Implied Volatility %',),
                               # Specify title with ticker label, voltype 
                               # and date
-                              title={'text':(str(self.ticker_label.upper())+
+                              title={'text':(str(self.ticker_label)+
                                              ' Implied Volatility '+
                                              str(voltype.title())+
                                              ' Price '+str(self.start_date)),
@@ -1596,24 +1512,24 @@ class Volatility(models.ImpliedVol):
         warnings.filterwarnings("default", category=UserWarning)
         
 
-    def _graph_format(self):
+    def _graph_format(self, fig_size, azim, elev, voltype):
         
         # Update chart parameters        
         plt.rcParams.update(self.mpl_3D_params)
         
         # Create fig object
-        self.fig = plt.figure(figsize=self.fig_size)
+        fig = plt.figure(figsize=fig_size)
         
         # Create axes object
-        ax = self.fig.add_subplot(111, projection='3d', azim=self.azim, 
-                                  elev=self.elev)
+        ax = fig.add_subplot(111, projection='3d', azim=azim, 
+                                  elev=elev)
               
         # Set background color to white
         ax.set_facecolor('w')
 
         # Create values that scale fonts with fig_size 
-        ax_font_scale = int(round(self.fig_size[0] * 1.1))
-        title_font_scale = int(round(self.fig_size[0] * 1.5))
+        ax_font_scale = int(round(fig_size[0] * 1.1))
+        title_font_scale = int(round(fig_size[0] * 1.5))
 
         # Tint the axis panes, RGB values from 0-1 and alpha denoting 
         # color intensity
@@ -1636,20 +1552,20 @@ class Volatility(models.ImpliedVol):
                       labelpad=ax_font_scale*1.2)
         
         # Specify title with ticker label, voltype and date
-        st = self.fig.suptitle(str(self.ticker_label.upper())+
-                               ' Implied Volatility '+
-                               str(self.voltype.title())+
-                               ' Price '+str(self.start_date), 
-                               fontsize=title_font_scale, 
-                               fontweight=0, 
-                               color='black', 
-                               style='italic', 
-                               y=1.02)
+        st = fig.suptitle(str(self.ticker_label)+
+                          ' Implied Volatility '+
+                          str(voltype.title())+
+                          ' Price '+str(self.start_date), 
+                          fontsize=title_font_scale, 
+                          fontweight=0, 
+                          color='black', 
+                          style='italic', 
+                          y=1.02)
 
         st.set_y(0.95)
-        self.fig.subplots_adjust(top=1)
+        fig.subplots_adjust(top=1)
                 
-        return self.fig, ax
+        return fig, ax
     
             
     
