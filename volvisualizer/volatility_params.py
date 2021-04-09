@@ -20,9 +20,13 @@ vol_params_dict = {
     'df_fig_size':(15, 12),
     'df_rbffunc':'thin_plate',
     'df_colorscale':'BlueRed',
-    'df_monthlies':False,
+    'df_monthlies':True,
     'df_opacity':1,
     'df_surf':True,
+    'df_save_image':False,
+    'df_image_folder':'images',
+    'df_image_filename':'impvol',
+    'df_image_dpi':50,
     
     # Dictionary of implied vol fields used in graph methods
     'df_vols_dict':{

@@ -1,3 +1,4 @@
+import os
 import calendar
 import datetime as dt
 import matplotlib.pyplot as plt
@@ -146,8 +147,32 @@ class Volatility(models.ImpliedVol):
                       
         return kwargs        
     
+    
+    def create_option_data(
+            self, start_date, ticker=None, ticker_label=None, wait=None, 
+            lastmins=None, mindays=None, minopts=None, volume=None, 
+            openint=None, monthlies=None, spot=None, put_strikes=None, 
+            call_strikes=None, divisor=None, r=None, q=None, epsilon=None, 
+            method=None):
         
-    def extractoptions(self, ticker=None, wait=None):
+        self._extractoptions(ticker=ticker, wait=wait)
+        print("Options data extracted")
+        
+        self._transform(
+            start_date=start_date, lastmins=lastmins, mindays=mindays, 
+            minopts=minopts, volume=volume, openint=openint, 
+            monthlies=monthlies)
+        print("Data transformed")
+        
+        self._combine(
+            ticker_label=ticker_label, spot=spot, put_strikes=put_strikes, 
+            call_strikes=call_strikes, divisor=divisor, r=r, q=q, 
+            epsilon=epsilon, method=method)
+        
+        print("Data combined")
+    
+        
+    def _extractoptions(self, ticker=None, wait=None):
         """
         Extract option data from Yahoo Finance
 
@@ -171,7 +196,8 @@ class Volatility(models.ImpliedVol):
                 ticker=ticker, wait=wait))
         
         # Extract dictionary of option dates and urls        
-        self.url_dict = self._extracturls(ticker)                
+        self.url_dict = self._extracturls(ticker)
+        print("URL's extracted")                
                 
         # Create an empty dictionary
         option_dict = {}
@@ -327,7 +353,7 @@ class Volatility(models.ImpliedVol):
         return url_dict    
     
 
-    def transform(self, start_date, lastmins=None, mindays=None, minopts=None, 
+    def _transform(self, start_date, lastmins=None, mindays=None, minopts=None, 
                   volume=None, openint=None, monthlies=None):    
         """
         Perform some filtering / transforming of the option data
@@ -523,8 +549,9 @@ class Volatility(models.ImpliedVol):
         return self
 
 
-    def combine(self, ticker_label, spot=None, put_strikes=None, 
-                call_strikes=None, r=None, q=None, epsilon=None, method=None):
+    def _combine(self, ticker_label=None, spot=None, put_strikes=None, 
+                call_strikes=None, divisor=None, r=None, q=None, epsilon=None, 
+                method=None):
         """
         Calculate implied volatilities for specified put and call 
         strikes and combine.
@@ -564,12 +591,16 @@ class Volatility(models.ImpliedVol):
         
         # Calculate strikes if strikes and spot price are not supplied.          
         spot, put_strikes, call_strikes = self._create_strike_range(
-            spot, put_strikes, call_strikes)        
+            spot=spot, put_strikes=put_strikes, call_strikes=call_strikes, 
+            divisor=divisor)        
                 
         # create copy of filtered data
         input_data = self.data.copy()
         
         # Assign ticker label to the object
+        if ticker_label is None:
+            ticker_label = self.ticker.lstrip('^')
+        
         self.ticker_label = ticker_label
         
         # Create empty list and dictionary for storing options
@@ -612,19 +643,22 @@ class Volatility(models.ImpliedVol):
         
             print('Call option: ', opt_name)
         
-        # Concatenate all the option results into a single DataFrame
-        self.imp_vol_data = pd.concat(opt_list)
+        # Concatenate all the option results into a single DataFrame and drop 
+        # any null values
+        self.imp_vol_data = pd.concat(opt_list).dropna()
     
         return self
 
 
-    def _create_strike_range(self, spot, put_strikes, call_strikes):
+    def _create_strike_range(self, spot, put_strikes, call_strikes, divisor=None):
         
-        # Set the distance between put strikes as 25 for SPX or 10 otherwise
-        if self.ticker == '^SPX':
-            divisor = 25
-        else:
-            divisor = 10
+        # Set the distance between put strikes as 25 for SPX or 10 otherwise 
+        # if not provided
+        if divisor is None:
+            if self.ticker == '^SPX':
+                divisor = 25
+            else:
+                divisor = 10
         
         # Extract the spot level from the html data    
         if spot is None:
@@ -760,132 +794,13 @@ class Volatility(models.ImpliedVol):
         warnings.filterwarnings("default", category=RuntimeWarning)
         
         return row
-
     
-    def smooth(self, order=None, voltype=None, smoothopt=None):
-        """
-        Create a column of smoothed implied vols
 
-        Parameters
-        ----------
-        order : Int
-            Polynomial order used in numpy polyfit function. The 
-            default is 3.
-        voltype : Str
-            Whether to use 'bid', 'mid', 'ask' or 'last' price. The 
-            default is 'last'.
-        smoothopt : Int    
-            Minimum number of options to fit curve to. The default 
-            is 6.
-        
-        Returns
-        -------
-        DataFrame
-            DataFrame of Option prices.
-
-        """
-        
-        # If inputs are not supplied, take existing values
-        order, voltype, smoothopt = itemgetter(
-            'order', 'voltype', 'smoothopt')(self._refresh_params_default(
-                order=order, voltype=voltype, smoothopt=smoothopt))
-               
-        # Create a dictionary of the number of options for each 
-        # maturity
-        self.mat_dict = dict(Counter(self.imp_vol_data['Days']))
-        
-        # Create a sorted list of the different number of days to 
-        # maturity
-        self.maturities = sorted(list(set(self.imp_vol_data['Days'])))
-        
-        # Create a sorted list of the different number of strikes
-        self.strikes_full = sorted(list(set((self.imp_vol_data[
-            'Strike'].astype(float)))))
-        
-        # create copy of implied vol data
-        self.imp_vol_data_smoothed = self.imp_vol_data.copy()
-        
-        for ttm, count in self.mat_dict.items():
-            
-            # if there are less than smoothopt (default is 6) options 
-            # for a given maturity
-            if count < smoothopt:
-                
-                # remove that maturity from the maturities list
-                self.maturities.remove(ttm)
-                
-                # and remove that maturity from the implied vol 
-                # DataFrame
-                self.imp_vol_data_smoothed = self.imp_vol_data_smoothed[
-                    self.imp_vol_data_smoothed['Days'] != ttm]            
-        
-        # Create empty DataFrame with the full range of strikes as 
-        # index
-        self.smooth_surf = pd.DataFrame(index=self.strikes_full)
-        
-        # going through the maturity list (in reverse so the columns 
-        # created are in increasing order)
-        for maturity in reversed(self.maturities):
-            
-            # Extract the strikes for this maturity
-            strikes = self.imp_vol_data[self.imp_vol_data[
-                'Days']==maturity]['Strike']
-            
-            # And the vols (specifying the voltype)
-            vols = self.imp_vol_data[self.imp_vol_data[
-                'Days']==maturity][str(self.vols_dict[str(self.voltype)])]
-            
-            # Fit a polynomial to this data
-            curve_fit = np.polyfit(strikes, vols, order)
-            p = np.poly1d(curve_fit)
-            
-            # Create empty list to store smoothed implied vols
-            iv_new = []
-            
-            # For each strike
-            for strike in self.strikes_full:
-                
-                # Add the smoothed value to the iv_new list 
-                iv_new.append(p(strike))
-            
-            # Append this list as a new column in the smooth_surf 
-            # DataFrame    
-            self.smooth_surf.insert(0, str(maturity), iv_new) 
-    
-        # Apply the _vol_map function to add smoothed vol column to 
-        # DataFrame
-        self.imp_vol_data_smoothed = self.imp_vol_data_smoothed.apply(
-            lambda x: self._vol_map(x), axis=1)
-
-        return self
-
-
-    def _vol_map(self, row):
-        """
-        Map value calculated in smooth surface DataFrame to 
-        'Smoothed Vol' column.
-
-        Parameters
-        ----------
-        row : Array
-            Each row in the DataFrame.
-
-        Returns
-        -------
-        row : Array
-            Each row in the DataFrame.
-
-        """
-        row['Smoothed Vol'] = self.smooth_surf.loc[row['Strike'], 
-                                                   str(row['Days'])]
-        
-        return row
-       
-    
     def visualize(self, graphtype=None, surfacetype=None, smoothing=None, 
                   scatter=None, voltype=None, order=None, spacegrain=None, 
                   azim=None, elev=None, fig_size=None, rbffunc=None, 
-                  colorscale=None, opacity=None, surf=None, notebook=None):
+                  colorscale=None, opacity=None, surf=None, notebook=None, 
+                  save_image=None, image_folder=None, image_dpi=None):
         """
         Visualize the implied volatility as 2D linegraph, 3D scatter 
         or 3D surface
@@ -933,6 +848,13 @@ class Volatility(models.ImpliedVol):
         notebook : Bool
             Whether interactive graph is run in Jupyter notebook or 
             IDE. The default is False.
+        save_image : Bool
+            Whether to save a copy of the image as a png file. The default is 
+            False
+        image_folder : Str
+            Location to save any images. The default is 'images'
+        image_dpi : Int
+            Resolution to save images. The default is 50.
 
         Returns
         -------
@@ -940,27 +862,8 @@ class Volatility(models.ImpliedVol):
 
         """
         
-        # Refresh inputs if not supplied
-        # For some we want them to persist between queries so take existing 
-        # object values
-        (graphtype, surfacetype, smoothing, colorscale, azim, elev, 
-         notebook) = itemgetter(
-                'graphtype', 'surfacetype', 'smoothing', 'colorscale', 'azim', 
-                'elev', 'notebook')(self._refresh_params_current(
-                    graphtype=graphtype, surfacetype=surfacetype, 
-                    smoothing=smoothing, colorscale=colorscale, azim=azim, 
-                    elev=elev, notebook=notebook))
- 
-
-        # For others we reset to default each time
-        (voltype, scatter, order, spacegrain, fig_size, rbffunc, 
-         opacity, surf) = itemgetter(
-                'voltype', 'scatter', 'order', 'spacegrain', 'fig_size', 
-                'rbffunc', 'opacity', 'surf')(self._refresh_params_default(
-                    voltype=voltype, scatter=scatter, order=order, 
-                    spacegrain=spacegrain, fig_size=fig_size, rbffunc=rbffunc,
-                    opacity=opacity, surf=surf))
-
+        if graphtype is None:
+            graphtype = self.vol_params_dict['df_graphtype']
 
         # Run method selected by graphtype
         if graphtype == 'line':
@@ -974,10 +877,12 @@ class Volatility(models.ImpliedVol):
                 voltype=voltype, order=order, spacegrain=spacegrain, azim=azim, 
                 elev=elev, fig_size=fig_size, rbffunc=rbffunc, 
                 colorscale=colorscale, opacity=opacity, surf=surf, 
-                notebook=notebook)
+                notebook=notebook, save_image=save_image, 
+                image_folder=image_folder, image_dpi=image_dpi)
             
     
-    def line_graph(self, voltype=None):
+    def line_graph(self, voltype=None, save_image=None, image_folder=None, 
+                   image_dpi=None):
         """
         Displays a linegraph of each option maturity plotted by strike 
         and implied vol
@@ -987,6 +892,13 @@ class Volatility(models.ImpliedVol):
         voltype : Str
             Whether to use 'bid', 'mid', 'ask' or 'last' price. The 
             default is 'last'.
+        save_image : Bool
+            Whether to save a copy of the image as a png file. The default is 
+            False
+        image_folder : Str
+            Location to save any images. The default is 'images'
+        image_dpi : Int
+            Resolution to save images. The default is 50.    
 
         Returns
         -------
@@ -995,9 +907,11 @@ class Volatility(models.ImpliedVol):
         """
         
         # If inputs are not supplied, take existing values
-        voltype = itemgetter(
-            'voltype')(self._refresh_params_default(
-                voltype=voltype))
+        voltype, save_image, image_folder, image_dpi = itemgetter(
+            'voltype', 'save_image', 'image_folder', 
+             'image_dpi')(self._refresh_params_default(
+                voltype=voltype, save_image=save_image, 
+                 image_folder=image_folder, image_dpi=image_dpi))
         
         # Create a sorted list of the different number of option 
         # expiries
@@ -1062,8 +976,14 @@ class Volatility(models.ImpliedVol):
         # Display graph
         plt.show()
 
+        if save_image:
+            # save the image as a png file
+            self._image_save(fig=fig, image_folder=image_folder, 
+                             image_dpi=image_dpi)
+            
 
-    def scatter_3D(self, voltype=None, azim=None, elev=None, fig_size=None):
+    def scatter_3D(self, voltype=None, azim=None, elev=None, fig_size=None, 
+                   save_image=None, image_folder=None, image_dpi=None):
         """
         Displays a 3D scatter plot of each option implied vol against 
         strike and maturity
@@ -1079,6 +999,13 @@ class Volatility(models.ImpliedVol):
             Elevation view angle for 3D graphs. The default is 20.
         fig_size : Tuple
             3D graph size    
+        save_image : Bool
+            Whether to save a copy of the image as a png file. The default is 
+            False
+        image_folder : Str
+            Location to save any images. The default is 'images'
+        image_dpi : Int
+            Resolution to save images. The default is 50.    
 
         Returns
         -------
@@ -1089,9 +1016,11 @@ class Volatility(models.ImpliedVol):
         # Refresh inputs if not supplied
         # For some we want them to persist between queries so take 
         # existing object values
-        azim, elev = itemgetter(
-            'azim', 'elev')(self._refresh_params_current(
-                azim=azim, elev=elev))
+        azim, elev, save_image, image_folder, image_dpi = itemgetter(
+            'azim', 'elev', 'save_image', 'image_folder', 
+             'image_dpi')(self._refresh_params_current(
+                azim=azim, elev=elev, save_image=save_image, 
+                 image_folder=image_folder, image_dpi=image_dpi))
         
         # For others we reset to default each time
         voltype, fig_size = itemgetter(
@@ -1117,12 +1046,18 @@ class Volatility(models.ImpliedVol):
         # Display scatter, specifying colour to vary with z-axis and use 
         # colormap 'viridis'
         ax.scatter3D(x, y, z, c=z, cmap='viridis')
-    
+
+        if save_image:
+            # save the image as a png file
+            self._image_save(fig=fig, image_folder=image_folder, 
+                             image_dpi=image_dpi)
+            
 
     def surface_3D(self, surfacetype=None, smoothing=None, scatter=None, 
                    voltype=None, order=None, spacegrain=None, azim=None, 
                    elev=None, fig_size=None, rbffunc=None, colorscale=None, 
-                   opacity=None, surf=None, notebook=None):
+                   opacity=None, surf=None, notebook=None, save_image=None, 
+                   image_folder=None, image_dpi=None):
         """
         Displays a 3D surface plot of the implied vol surface against 
         strike and maturity
@@ -1168,6 +1103,13 @@ class Volatility(models.ImpliedVol):
         notebook : Bool
             Whether interactive graph is run in Jupyter notebook or IDE. 
             The default is False.
+        save_image : Bool
+            Whether to save a copy of the image as a png file. The default is 
+            False
+        image_folder : Str
+            Location to save any images. The default is 'images'
+        image_dpi : Int
+            Resolution to save images. The default is 50.    
 
         Returns
         -------
@@ -1179,12 +1121,14 @@ class Volatility(models.ImpliedVol):
         # For some we want them to persist between queries so take existing 
         # object values
         (surfacetype, smoothing, colorscale, azim, elev, 
-         notebook) = itemgetter(
-                'surfacetype', 'smoothing', 'colorscale', 'azim', 'elev', 
-                'notebook')(self._refresh_params_current(
-                    surfacetype=surfacetype, smoothing=smoothing, 
-                    colorscale=colorscale, azim=azim, elev=elev,
-                    notebook=notebook))
+         notebook, save_image, image_folder, image_dpi) = itemgetter(
+             'surfacetype', 'smoothing', 'colorscale', 'azim', 'elev', 
+             'notebook', 'save_image', 'image_folder', 
+             'image_dpi')(self._refresh_params_current(
+                 surfacetype=surfacetype, smoothing=smoothing, 
+                 colorscale=colorscale, azim=azim, elev=elev,
+                 notebook=notebook, save_image=save_image, 
+                 image_folder=image_folder, image_dpi=image_dpi))
  
 
         # For others we reset to default each time
@@ -1220,7 +1164,7 @@ class Volatility(models.ImpliedVol):
         else:
             
             # Apply the smoothing function to the specified voltype
-            self.smooth(order=order, voltype=voltype)
+            self._smooth(order=order, voltype=voltype)
             
             # Create copy of implied vol data
             self.data_3D = self.imp_vol_data_smoothed.copy()
@@ -1241,7 +1185,8 @@ class Volatility(models.ImpliedVol):
         if surfacetype == 'trisurf':
             
             # Create figure and axis objects and format
-            fig, ax = self._graph_format(fig_size=fig_size, azim=azim, elev=elev, voltype=voltype)
+            fig, ax = self._graph_format(
+                fig_size=fig_size, azim=azim, elev=elev, voltype=voltype)
            
             # Display triangular surface plot, using colormap 'viridis'
             ax.plot_trisurf(x, y, z, cmap='viridis', edgecolor='none')
@@ -1261,7 +1206,8 @@ class Volatility(models.ImpliedVol):
                           method='cubic')
             
             # Create figure and axis objects and format
-            fig, ax = self._graph_format(fig_size=fig_size, azim=azim, elev=elev, voltype=voltype)
+            fig, ax = self._graph_format(
+                fig_size=fig_size, azim=azim, elev=elev, voltype=voltype)
                        
             # Plot the surface
             ax.plot_surface(x1, y1, z1)
@@ -1292,7 +1238,8 @@ class Volatility(models.ImpliedVol):
             z2 = spline(x2, y2)
             
             # Create figure and axis objects and format
-            fig, ax = self._graph_format(fig_size=fig_size, azim=azim, elev=elev, voltype=voltype)
+            fig, ax = self._graph_format(
+                fig_size=fig_size, azim=azim, elev=elev, voltype=voltype)
             
             # Plot the surface
             ax.plot_wireframe(x2, y2, z2)
@@ -1300,10 +1247,10 @@ class Volatility(models.ImpliedVol):
             
             # If scatter is True, overlay the surface with the 
             # unsmoothed scatter points
-            if scatter == True:
+            if scatter:
                 z = self.data_3D[str(self.vols_dict[str(self.voltype)])] * 100
                 ax.scatter3D(x, y, z, c='r')
-
+           
 
         if surfacetype in ['interactive_mesh', 'interactive_spline']:
             
@@ -1506,7 +1453,11 @@ class Volatility(models.ImpliedVol):
             # Otherwise create a new HTML window to display    
             else:
                 plot(fig, auto_open=True)
-
+        
+        if save_image:
+            # save the image as a png file
+            self._image_save(fig=fig, image_folder=image_folder, 
+                             image_dpi=image_dpi)
 
         # Set warnings back to default
         warnings.filterwarnings("default", category=UserWarning)
@@ -1568,5 +1519,133 @@ class Volatility(models.ImpliedVol):
         return fig, ax
     
             
+    def _smooth(self, order=None, voltype=None, smoothopt=None):
+        """
+        Create a column of smoothed implied vols
+
+        Parameters
+        ----------
+        order : Int
+            Polynomial order used in numpy polyfit function. The 
+            default is 3.
+        voltype : Str
+            Whether to use 'bid', 'mid', 'ask' or 'last' price. The 
+            default is 'last'.
+        smoothopt : Int    
+            Minimum number of options to fit curve to. The default 
+            is 6.
+        
+        Returns
+        -------
+        DataFrame
+            DataFrame of Option prices.
+
+        """
+        
+        # If inputs are not supplied, take existing values
+        order, voltype, smoothopt = itemgetter(
+            'order', 'voltype', 'smoothopt')(self._refresh_params_default(
+                order=order, voltype=voltype, smoothopt=smoothopt))
+               
+        # Create a dictionary of the number of options for each 
+        # maturity
+        mat_dict = dict(Counter(self.imp_vol_data['Days']))
+        
+        # Create a sorted list of the different number of days to 
+        # maturity
+        maturities = sorted(list(set(self.imp_vol_data['Days'])))
+        
+        # Create a sorted list of the different number of strikes
+        strikes_full = sorted(list(set((self.imp_vol_data[
+            'Strike'].astype(float)))))
+        
+        # create copy of implied vol data
+        self.imp_vol_data_smoothed = self.imp_vol_data.copy()
+        
+        for ttm, count in mat_dict.items():
+            
+            # if there are less than smoothopt (default is 6) options 
+            # for a given maturity
+            if count < smoothopt:
+                
+                # remove that maturity from the maturities list
+                maturities.remove(ttm)
+                
+                # and remove that maturity from the implied vol 
+                # DataFrame
+                self.imp_vol_data_smoothed = self.imp_vol_data_smoothed[
+                    self.imp_vol_data_smoothed['Days'] != ttm]            
+        
+        # Create empty DataFrame with the full range of strikes as 
+        # index
+        self.smooth_surf = pd.DataFrame(index=strikes_full)
+        
+        # going through the maturity list (in reverse so the columns 
+        # created are in increasing order)
+        for maturity in reversed(maturities):
+            
+            # Extract the strikes for this maturity
+            strikes = self.imp_vol_data[self.imp_vol_data[
+                'Days']==maturity]['Strike']
+            
+            # And the vols (specifying the voltype)
+            vols = self.imp_vol_data[self.imp_vol_data[
+                'Days']==maturity][str(self.vols_dict[str(self.voltype)])]
+            
+            # Fit a polynomial to this data
+            curve_fit = np.polyfit(strikes, vols, order)
+            p = np.poly1d(curve_fit)
+            
+            # Create empty list to store smoothed implied vols
+            iv_new = []
+            
+            # For each strike
+            for strike in strikes_full:
+                
+                # Add the smoothed value to the iv_new list 
+                iv_new.append(p(strike))
+            
+            # Append this list as a new column in the smooth_surf 
+            # DataFrame    
+            self.smooth_surf.insert(0, str(maturity), iv_new) 
     
-    
+        # Apply the _vol_map function to add smoothed vol column to 
+        # DataFrame
+        self.imp_vol_data_smoothed = self.imp_vol_data_smoothed.apply(
+            lambda x: self._vol_map(x), axis=1)
+
+        return self
+
+
+    def _vol_map(self, row):
+        """
+        Map value calculated in smooth surface DataFrame to 
+        'Smoothed Vol' column.
+
+        Parameters
+        ----------
+        row : Array
+            Each row in the DataFrame.
+
+        Returns
+        -------
+        row : Array
+            Each row in the DataFrame.
+
+        """
+        row['Smoothed Vol'] = self.smooth_surf.loc[row['Strike'], 
+                                                   str(row['Days'])]
+        
+        return row
+       
+        
+    def _image_save(self, fig, image_folder, image_dpi):
+        
+        # Create image folder if it does not already exist
+        if not os.path.exists(image_folder):
+            os.makedirs(image_folder)
+            
+        # save the image as a png file    
+        plt.savefig('{}/{}{}.png'.format(
+            image_folder, self.ticker_label, self.start_date), 
+            dpi=image_dpi)
