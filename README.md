@@ -25,11 +25,11 @@ $ activate volvis
 ```
 Install Python
 ```
-(volvis) $ conda install python
+(volvis) $ conda install python==3.8.8
 ```
 Install Spyder
 ```
-(volvis) $ conda install spyder=4
+(volvis) $ conda install spyder=4.2.5
 ```
 Install package
 ```
@@ -48,16 +48,9 @@ imp = vol.Volatility()
 
 &nbsp;
 
-Extract URLs and the option data for each, specifying a start date used in refining the dataset
+Create option data which will extract URLs and the option data for each tenor, here specifying S&P500 as the ticker, a start date of 8th April 2021, a delay of 0.5 seconds between each API call, select only monthly expiries and a dividend yield of 1.3%.
 ```
-imp.extracturls('^SPX').extractoptions().transform(start_date, monthlies=True)
-```
-
-&nbsp;
-
-Select a range of call and put strikes and spot reference
-```
-imp.combine(ticker, put_strikes, call_strikes, spot, r, q, epsilon, method='NR')
+imp.create_option_data(ticker='^SPX', start_date='2021-04-08', wait=0.5, monthlies=True, q=0.013)
 ```
 
 &nbsp;
