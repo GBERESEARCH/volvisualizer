@@ -195,7 +195,7 @@ class Volatility(models.ImpliedVol):
             Range of put strikes to calculate implied volatility for.
         call_strikes : List
             Range of call strikes to calculate implied volatility for.
-        strike_limit : Tuple
+        strike_limits : Tuple
             min and max strikes to use expressed as a decimal 
             percentage. The default is (0.5, 2.0).
         divisor : Int
@@ -233,8 +233,8 @@ class Volatility(models.ImpliedVol):
         # Calculate implied volatilities and combine
         self._combine(
             ticker_label=ticker_label, spot=spot, put_strikes=put_strikes, 
-            call_strikes=call_strikes, divisor=divisor, r=r, q=q, 
-            epsilon=epsilon, method=method)
+            call_strikes=call_strikes, strike_limits=strike_limits, 
+            divisor=divisor, r=r, q=q, epsilon=epsilon, method=method)
         
         print("Data combined")
     
@@ -729,6 +729,8 @@ class Volatility(models.ImpliedVol):
     def _create_strike_range(self, spot, put_strikes, call_strikes, 
                              strike_limits, divisor):
         
+        print(put_strikes, call_strikes, strike_limits, divisor)
+        
         # Set the distance between put strikes as 25 for SPX or 10 otherwise 
         # if not provided
         if divisor is None:
@@ -749,6 +751,8 @@ class Volatility(models.ImpliedVol):
         
         if strike_limits is None:
             strike_limits = self.vol_params_dict['df_strike_limits'] 
+        
+        self.strike_limits = strike_limits
         
         # Calculate put options (default is 1/2 spot level)
         if put_strikes is None:
