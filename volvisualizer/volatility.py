@@ -152,18 +152,85 @@ class Volatility(models.ImpliedVol):
             self, start_date, ticker=None, ticker_label=None, wait=None, 
             lastmins=None, mindays=None, minopts=None, volume=None, 
             openint=None, monthlies=None, spot=None, put_strikes=None, 
-            call_strikes=None, divisor=None, r=None, q=None, epsilon=None, 
-            method=None):
+            call_strikes=None, strike_limits=None, divisor=None, r=None, 
+            q=None, epsilon=None, method=None):
+        """
+        Extract the URL for each of the listed option on Yahoo Finance 
+        for the given ticker. Extract option data from each URL.
         
+        Filter / transform the data and calculate implied volatilities for 
+        specified put and call strikes.
+
+        Parameters
+        ----------
+        start_date : Str
+            Date from when to include prices (some of the options 
+            won't have traded for days / weeks and therefore will 
+            have stale prices).
+        ticker : Str
+            The ticker identifier used by Yahoo for the chosen stock. The 
+            default is '^SPX'.
+        ticker_label : TYPE, optional
+            DESCRIPTION. The default is None.
+        wait : Int
+            Number of seconds to wait between each url query
+        lastmins : Int, Optional 
+            Restrict to trades within number of minutes since last 
+            trade time recorded
+        mindays : Int, Optional    
+            Restrict to options greater than certain option expiry
+        minopts : Int, Optional
+            Restrict to minimum number of options to include that 
+            option expiry
+        volume : Int, Optional    
+            Restrict to minimum Volume
+        openint : Int, Optional
+            Restrict to minimum Open Interest
+        monthlies : Bool    
+            Restrict expiries to only 3rd Friday of the month. Default 
+            is False.
+        spot : Float
+            Underlying reference level.
+        put_strikes : List
+            Range of put strikes to calculate implied volatility for.
+        call_strikes : List
+            Range of call strikes to calculate implied volatility for.
+        strike_limit : Tuple
+            min and max strikes to use expressed as a decimal 
+            percentage. The default is (0.5, 2.0).
+        divisor : Int
+            Distance between each strike in dollars. The default is 25 for SPX 
+            and 10 otherwise.
+        r : Float
+            Interest Rate. The default is 0.005.
+        q : Float
+            Dividend Yield. The default is 0.
+        epsilon : Float
+            Degree of precision to return implied vol. The default 
+            is 0.001.
+        method : Str
+            Implied Vol method; 'nr', 'bisection' or 'naive'. The 
+            default is 'nr'.
+
+        Returns
+        -------
+        DataFrame
+            DataFrame of Option data.
+
+        """
+        
+        # Extract URLs and option data
         self._extractoptions(ticker=ticker, wait=wait)
         print("Options data extracted")
         
+        # Filter / transform data
         self._transform(
             start_date=start_date, lastmins=lastmins, mindays=mindays, 
             minopts=minopts, volume=volume, openint=openint, 
             monthlies=monthlies)
         print("Data transformed")
         
+        # Calculate implied volatilities and combine
         self._combine(
             ticker_label=ticker_label, spot=spot, put_strikes=put_strikes, 
             call_strikes=call_strikes, divisor=divisor, r=r, q=q, 
@@ -174,12 +241,15 @@ class Volatility(models.ImpliedVol):
         
     def _extractoptions(self, ticker=None, wait=None):
         """
-        Extract option data from Yahoo Finance
+        Extract the URL for each of the listed option on Yahoo Finance 
+        for the given ticker. Extract option data from each URL.
+        
 
         Parameters
         ----------
-        url_dict : Dict
-            Dictionary of URLs to download option prices from.
+        ticker : Str
+            The ticker identifier used by Yahoo for the chosen stock. The 
+            default is '^SPX'.
         wait : Int
             Number of seconds to wait between each url query
 
@@ -550,8 +620,8 @@ class Volatility(models.ImpliedVol):
 
 
     def _combine(self, ticker_label=None, spot=None, put_strikes=None, 
-                call_strikes=None, divisor=None, r=None, q=None, epsilon=None, 
-                method=None):
+                call_strikes=None, strike_limits=None, divisor=None, r=None, 
+                q=None, epsilon=None, method=None):
         """
         Calculate implied volatilities for specified put and call 
         strikes and combine.
@@ -559,13 +629,19 @@ class Volatility(models.ImpliedVol):
         Parameters
         ----------
         ticker_label : Str
-            Stcok Ticker.
+            Stock Ticker.
+        spot : Float
+            Underlying reference level.
         put_strikes : List
             Range of put strikes to calculate implied volatility for.
         call_strikes : List
             Range of call strikes to calculate implied volatility for.
-        spot : Float
-            Underlying reference level.
+        strike_limit : Tuple
+            min and max strikes to use expressed as a decimal 
+            percentage. The default is (0.5, 2.0).
+        divisor : Int
+            Distance between each strike in dollars. The default is 25 for SPX 
+            and 10 otherwise.
         r : Float
             Interest Rate. The default is 0.005.
         q : Float
@@ -592,7 +668,7 @@ class Volatility(models.ImpliedVol):
         # Calculate strikes if strikes and spot price are not supplied.          
         spot, put_strikes, call_strikes = self._create_strike_range(
             spot=spot, put_strikes=put_strikes, call_strikes=call_strikes, 
-            divisor=divisor)        
+            strike_limits=strike_limits, divisor=divisor)        
                 
         # create copy of filtered data
         input_data = self.data.copy()
@@ -650,15 +726,16 @@ class Volatility(models.ImpliedVol):
         return self
 
 
-    def _create_strike_range(self, spot, put_strikes, call_strikes, divisor=None):
+    def _create_strike_range(self, spot, put_strikes, call_strikes, 
+                             strike_limits, divisor):
         
         # Set the distance between put strikes as 25 for SPX or 10 otherwise 
         # if not provided
         if divisor is None:
             if self.ticker == '^SPX':
-                divisor = 25
+                divisor = self.vol_params_dict['df_divisor_SPX']
             else:
-                divisor = 10
+                divisor = self.vol_params_dict['df_divisor']
         
         # Extract the spot level from the html data    
         if spot is None:
@@ -670,15 +747,17 @@ class Volatility(models.ImpliedVol):
         # Calculate the point to switch from put to call options
         roundspot = round(spot / divisor) * divisor
         
-        # Calculate put options from 1/2 spot level
+        if strike_limits is None:
+            strike_limits = self.vol_params_dict['df_strike_limits'] 
+        
+        # Calculate put options (default is 1/2 spot level)
         if put_strikes is None:
-            put_min = round(spot / 2 / divisor) * divisor
+            put_min = round(spot * strike_limits[0] / divisor) * divisor
             put_strikes = list(range(put_min, roundspot, divisor))
 
-        # Calculate call options to twice the spot level
-        # Set the distance between strikes at twice the size of the puts
+        # Calculate call options (default is twice the spot level)
         if call_strikes is None:
-            call_max = round(spot * 2 / divisor) * divisor
+            call_max = round(spot * strike_limits[1] / divisor) * divisor
             call_strikes = list(range(roundspot, call_max, divisor))
 
         return spot, put_strikes, call_strikes
