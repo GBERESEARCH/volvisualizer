@@ -25,11 +25,11 @@ $ activate volvis
 ```
 Install Python
 ```
-(volvis) $ conda install python==3.8.8
+(volvis) $ conda install python==3.9
 ```
 Install Spyder
 ```
-(volvis) $ conda install spyder=4.2.5
+(volvis) $ conda install spyder
 ```
 Install package
 ```
@@ -39,19 +39,13 @@ Install package
 &nbsp;
 
 ### Setup
-Import volatility module and initialise a Volatility object
+Import volatility module and initialise a Volatility object that will extract URLs and the option data for each tenor, here specifying S&P500 as the ticker, a start date of 18th August 2021, a delay of 0.5 seconds between each API call, select only monthly expiries and a dividend yield of 1.3%.
 
 ```
 import volvisualizer.volatility as vol
-imp = vol.Volatility()
+imp = vol.Volatility(ticker='^SPX', start_date='2021-8-18', wait=0.5, monthlies=True, q=0.013)
 ```
 
-&nbsp;
-
-Create option data which will extract URLs and the option data for each tenor, here specifying S&P500 as the ticker, a start date of 8th April 2021, a delay of 0.5 seconds between each API call, select only monthly expiries and a dividend yield of 1.3%.
-```
-imp.create_option_data(ticker='^SPX', start_date='2021-04-08', wait=0.5, monthlies=True, q=0.013)
-```
 
 &nbsp;
 
