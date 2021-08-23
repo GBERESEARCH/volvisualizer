@@ -406,7 +406,7 @@ class Data():
             - pd.to_datetime(date.today())) / (pd.Timedelta(days=1) * 365)
 
         # Create Days to Maturity column
-        tables['data']['Days'] = (tables['data']['TTM']*365).astype(int)
+        tables['data']['Days'] = np.round(tables['data']['TTM']*365, 0)
 
         params, tables = cls._filters(params=params, tables=tables)
 
@@ -601,11 +601,11 @@ class Data():
 
         """
 
-        # Calculate strikes if strikes and spot price are not supplied.
-        params = cls._create_strike_range(params=params)
-
         # create copy of filtered data
         input_data = copy.deepcopy(tables['data'])
+
+        # Calculate strikes if strikes and spot price are not supplied.
+        params = cls._create_strike_range(params=params, tables=tables)
 
         # Assign ticker label to the object
         if params['ticker_label'] is None:
@@ -658,19 +658,8 @@ class Data():
         return params, tables
 
 
-    @staticmethod
-    def _create_strike_range(params):
-
-        print(params['put_strikes'], params['call_strikes'],
-              params['strike_limits'], params['divisor'])
-
-        # Set the distance between put strikes as 25 for SPX or 10 otherwise
-        # if not provided
-        if params['divisor'] is None:
-            if params['ticker'] == '^SPX':
-                params['divisor'] = params['divisor_SPX']
-            else:
-                params['divisor'] = 10
+    @classmethod
+    def _create_strike_range(cls, params, tables):
 
         # Extract the spot level from the html data
         if params['spot'] is None:
@@ -680,27 +669,80 @@ class Data():
             params['spot'] = float(
                 [str(p) for p in priceparse][0].replace(',',''))
 
-        # Calculate the point to switch from put to call options
-        roundspot = (
-            round(params['spot'] / params['divisor']) * params['divisor'])
+        # Calculate initial spot, min and max strikes to use in divisor
+        # calculation
+        params['init_roundspot'], params['init_put_min'], \
+            params['init_call_max'] = cls._strike_filters(
+                params=params, divisor=10)
+
+        # If a divisor value is not provided
+        if params['divisor'] is None:
+            params = cls._create_divisor(params=params, tables=tables)
+
+        # Calculate final spot, min and max strikes using chosen divisor
+        params['roundspot'], params['put_min'], \
+            params['call_max'] = cls._strike_filters(
+                params=params, divisor=params['divisor'])
 
         # Calculate put options (default is 1/2 spot level)
         if params['put_strikes'] is None:
-            put_min = (round(params['spot']
-                            * params['strike_limits'][0]
-                            / params['divisor'])
-                       * params['divisor'])
             params['put_strikes'] = list(
-                range(put_min, roundspot, params['divisor']))
+                np.linspace(
+                    params['put_min'],
+                    params['roundspot'],
+                    int((params['roundspot'] - params['put_min'])
+                        / params['divisor']) + 1))
 
         # Calculate call options (default is twice the spot level)
         if params['call_strikes'] is None:
-            call_max = (round(params['spot']
-                              * params['strike_limits'][1]
-                              / params['divisor'])
-                        * params['divisor'])
-            params['call_strikes'] = list(range(
-                roundspot, call_max, params['divisor']))
+            params['call_strikes'] = list(
+                np.linspace(
+                    params['roundspot'],
+                    params['call_max'],
+                    int((params['call_max'] - params['roundspot'])
+                        / params['divisor']) + 1))
+
+        return params
+
+
+    @staticmethod
+    def _strike_filters(params, divisor):
+
+        # Calculate the point to switch from put to call options
+        roundspot = (
+            round(params['spot'] / divisor) * divisor)
+
+        put_min = (
+            round(params['spot'] * params['strike_limits'][0] / divisor)
+            * divisor)
+
+        call_max = (
+            round(params['spot'] * params['strike_limits'][1] / divisor)
+            * divisor)
+
+        return roundspot, put_min, call_max
+
+
+    @staticmethod
+    def _create_divisor(params, tables):
+
+        # Take the set of all the option strikes in the data
+        strikes = set(tables['data']['Strike'])
+
+        # Find the number of options with a remainder of zero for each of the
+        # listed potential divisors
+        avail_strikes = {}
+        for div in [0.5, 1, 1.25, 2.5, 5, 10, 25, 50, 100]:
+            avail_strikes[div] = len(
+                {x for x in strikes if (
+                    x%(div) == 0
+                    and params['init_put_min'] < x < params['init_call_max'])})
+
+        # Find the maximum divisor of those with the highest number of options
+        params['divisor'] = max(
+            [divisor for max_strike_count in [max(avail_strikes.values())]
+             for divisor, strike_count in avail_strikes.items()
+             if strike_count == max_strike_count])
 
         return params
 
@@ -801,23 +843,23 @@ class Data():
                 'epsilon':params['epsilon'],
                 'option':option
                 }
-            #try:
+            try:
                 # populate the column using the chosen implied
                 # vol method (using getattr() to select
                 # dynamically)
                 # check if n/a value is returned and print error
                 # message if so
-            output = getattr(
-                ImpliedVol, func_name)(opt_params=opt_params)
+                output = getattr(
+                    ImpliedVol, func_name)(opt_params=opt_params)
 
-            output = float(output)
-            row[output_row] = output
+                output = float(output)
+                row[output_row] = output
 
-         #   except KeyError:
-         #       print("Error with option: Strike="+str(strike)+
-         #                 " TTM="+str(round(row['TTM'], 3))+
-         #                 " vol="+str(row[input_row])+
-         #                 " option="+option)
+            except KeyError:
+                print("Error with option: Strike="+str(strike)+
+                          " TTM="+str(round(row['TTM'], 3))+
+                          " vol="+str(row[input_row])+
+                          " option="+option)
 
         # Return warnings to default setting
         warnings.filterwarnings("default", category=RuntimeWarning)
