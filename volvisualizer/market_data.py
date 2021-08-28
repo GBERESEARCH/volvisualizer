@@ -18,6 +18,7 @@ import pytz
 from volvisualizer.utils import ImpliedVol
 # pylint: disable=invalid-name
 
+
 # Class used to open urls for financial data
 class UrlOpener(FancyURLopener):
     """

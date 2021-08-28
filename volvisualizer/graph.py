@@ -2,18 +2,17 @@
 Methods for graphing volatility data
 
 """
-from collections import Counter
 import copy
 import os
 import warnings
 import matplotlib.pyplot as plt
 import numpy as np
-import pandas as pd
 import plotly.graph_objects as go
 import scipy as sp
 from mpl_toolkits.mplot3d import Axes3D # pylint: disable=unused-import
 from plotly.offline import plot
 from scipy.interpolate import griddata
+from volvisualizer.vol_methods import VolMethods
 # pylint: disable=invalid-name
 
 class Graph():
@@ -260,9 +259,8 @@ class Graph():
 
         # Otherwise, if smoothing is set to True
         else:
-
             # Apply the smoothing function to the specified voltype
-            params, tables = cls._smooth(params=params, tables=tables)
+            params, tables = VolMethods.smooth(params=params, tables=tables)
 
             # Create copy of implied vol data
             tables['data_3D'] = copy.deepcopy(tables['imp_vol_data_smoothed'])
@@ -645,34 +643,43 @@ class Graph():
                     backgroundcolor="rgb(200, 200, 230)",
                     gridcolor="white",
                     showbackground=True,
-                    zerolinecolor="white",),
+                    zerolinecolor="white"
+                    ),
                 yaxis = dict(
                     backgroundcolor="rgb(230, 200,230)",
                     gridcolor="white",
                     showbackground=True,
-                    zerolinecolor="white"),
+                    zerolinecolor="white"
+                    ),
                 zaxis = dict(
                     backgroundcolor="rgb(230, 230,200)",
                     gridcolor="white",
                     showbackground=True,
-                    zerolinecolor="white",),
+                    zerolinecolor="white"
+                    ),
                 # Label axes
                 xaxis_title='Time to Expiration (Days)',
                 yaxis_title='Strike',
                 zaxis_title='Implied Volatility %',),
             # Specify title with ticker label, voltype
             # and date
-            title={'text':(str(params['ticker_label'])
-                           +' Implied Volatility '
-                           +str(params['voltype'].title())
-                           +' Price '
-                           +str(params['start_date'])),
-                   'y':0.9,
-                   'x':0.5,
-                   'xanchor':'center',
-                   'yanchor':'top',
-                   'font':dict(size=20,
-                               color="black")},
+            title={
+                'text':(
+                    str(params['ticker_label'])
+                    +' Implied Volatility '
+                    +str(params['voltype'].title())
+                    +' Price '
+                    +str(params['start_date'])
+                    ),
+                'y':0.9,
+                'x':0.5,
+                'xanchor':'center',
+                'yanchor':'top',
+                'font':dict(
+                    size=20,
+                    color="black"
+                    )
+                },
             autosize=False,
             width=800,
             height=800,
@@ -741,126 +748,6 @@ class Graph():
         fig.subplots_adjust(top=1)
 
         return fig, ax
-
-
-    @classmethod
-    def _smooth(cls, params, tables):
-        """
-        Create a column of smoothed implied vols
-
-        Parameters
-        ----------
-        order : Int
-            Polynomial order used in numpy polyfit function. The
-            default is 3.
-        voltype : Str
-            Whether to use 'bid', 'mid', 'ask' or 'last' price. The
-            default is 'last'.
-        smoothopt : Int
-            Minimum number of options to fit curve to. The default
-            is 6.
-
-        Returns
-        -------
-        DataFrame
-            DataFrame of Option prices.
-
-        """
-
-        # Create a dictionary of the number of options for each
-        # maturity
-        mat_dict = dict(Counter(tables['imp_vol_data']['Days']))
-
-        # Create a sorted list of the different number of days to
-        # maturity
-        maturities = sorted(list(set(tables['imp_vol_data']['Days'])))
-
-        # Create a sorted list of the different number of strikes
-        strikes_full = sorted(list(set((tables['imp_vol_data'][
-            'Strike'].astype(float)))))
-
-        # create copy of implied vol data
-        tables['imp_vol_data_smoothed'] = copy.deepcopy(tables['imp_vol_data'])
-
-        for ttm, count in mat_dict.items():
-
-            # if there are less than smoothopt (default is 6) options
-            # for a given maturity
-            if count < params['smoothopt']:
-
-                # remove that maturity from the maturities list
-                maturities.remove(ttm)
-
-                # and remove that maturity from the implied vol
-                # DataFrame
-                tables['imp_vol_data_smoothed'] = tables[
-                    'imp_vol_data_smoothed'][
-                        tables['imp_vol_data_smoothed']['Days'] != ttm]
-
-        # Create empty DataFrame with the full range of strikes as
-        # index
-        tables['smooth_surf'] = pd.DataFrame(index=strikes_full)
-
-        # going through the maturity list (in reverse so the columns
-        # created are in increasing order)
-        for maturity in reversed(maturities):
-
-            # Extract the strikes for this maturity
-            strikes = tables['imp_vol_data'][tables['imp_vol_data'][
-                'Days']==maturity]['Strike']
-
-            # And the vols (specifying the voltype)
-            vols = tables['imp_vol_data'][tables['imp_vol_data'][
-                'Days']==maturity][str(
-                    params['vols_dict'][str(params['voltype'])])]
-
-            # Fit a polynomial to this data
-            curve_fit = np.polyfit(strikes, vols, params['order'])
-            p = np.poly1d(curve_fit)
-
-            # Create empty list to store smoothed implied vols
-            iv_new = []
-
-            # For each strike
-            for strike in strikes_full:
-
-                # Add the smoothed value to the iv_new list
-                iv_new.append(p(strike))
-
-            # Append this list as a new column in the smooth_surf
-            # DataFrame
-            tables['smooth_surf'].insert(0, str(maturity), iv_new)
-
-        # Apply the _vol_map function to add smoothed vol column to
-        # DataFrame
-        tables['imp_vol_data_smoothed'] = (
-            tables['imp_vol_data_smoothed'].apply(
-                lambda x: cls._vol_map(x, tables), axis=1))
-
-        return params, tables
-
-
-    @staticmethod
-    def _vol_map(row, tables):
-        """
-        Map value calculated in smooth surface DataFrame to
-        'Smoothed Vol' column.
-
-        Parameters
-        ----------
-        row : Array
-            Each row in the DataFrame.
-
-        Returns
-        -------
-        row : Array
-            Each row in the DataFrame.
-
-        """
-        row['Smoothed Vol'] = (
-            tables['smooth_surf'].loc[row['Strike'], str(row['Days'])])
-
-        return row
 
 
     @staticmethod

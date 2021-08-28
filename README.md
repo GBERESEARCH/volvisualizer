@@ -42,8 +42,8 @@ Install package
 Import volatility module and initialise a Volatility object that will extract URLs and the option data for each tenor, here specifying S&P500 as the ticker, a start date of 18th August 2021, a delay of 0.5 seconds between each API call, select only monthly expiries and a dividend yield of 1.3%.
 
 ```
-import volvisualizer.volatility as vol
-imp = vol.Volatility(ticker='^SPX', start_date='2021-8-18', wait=0.5, monthlies=True, q=0.013)
+from volvisualizer.volatility import Volatility
+imp = Volatility(ticker='^SPX', start_date='2021-8-18', wait=0.5, monthlies=True, q=0.013)
 ```
 
 
@@ -54,6 +54,10 @@ imp = vol.Volatility(ticker='^SPX', start_date='2021-8-18', wait=0.5, monthlies=
 imp.visualize(graphtype='line')
 ```
 ![tsla_line](images/tsla_line.png)
+
+&nbsp;
+
+![aapl_line](images/aapl_line.png)
 
 &nbsp;
 
@@ -89,12 +93,36 @@ imp.visualize(graphtype='surface',surfacetype='interactive_spline', smoothing=Tr
 
 &nbsp;
 
+![spx_int_scatter_270821](images/spx_int_scatter_270821.png)
+
+&nbsp;
+
 #### 3D Interactive plot of each option implied volatility by strike and expiry using radial basis function interpolation.
 ```
 imp.visualize(graphtype='surface', surfacetype='interactive_spline', rbffunc='cubic', colorscale='Jet', smoothing=True)
 ```
 
 ![tsla_int_rbf](images/tsla_int_rbf.png)
+
+&nbsp;
+
+#### Extract Implied Volatility for a given maturity and strike
+```
+imp.vol(maturity='2021-09-30', strike=80)
+```
+37.61
+
+&nbsp;
+
+#### Skew Summary Report
+```
+imp.skewreport(months=12)
+```
+![aapl_skew_270821](images/aapl_skew_270821.png)
+
+&nbsp;
+
+![spx_skew_270821](images/spx_skew_270821.png)
 
 &nbsp;
 

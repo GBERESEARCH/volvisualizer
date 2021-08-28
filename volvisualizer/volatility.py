@@ -8,6 +8,7 @@ from volvisualizer.graph import Graph
 from volvisualizer.market_data import Data
 from volvisualizer.utils import Utils
 from volvisualizer.volatility_params import vol_params_dict
+from volvisualizer.vol_methods import VolMethods
 
 class Volatility():
     """
@@ -94,8 +95,14 @@ class Volatility():
 
         params, tables = Data.create_option_data(params=params, tables=tables)
 
+        surface_models = {}
+        surface_models['vol_surface'], \
+            surface_models['vol_surface_smoothed'] = VolMethods.map_vols(
+                params=params, tables=tables)
+
         self.params = params
         self.tables = tables
+        self.surface_models = surface_models
 
 
     def visualize(self, **kwargs):
@@ -325,3 +332,53 @@ class Volatility():
 
         self.params, self.tables = Graph.surface_3d(
             params=self.params, tables=self.tables)
+
+
+    def vol(self, maturity, strike, smoothing=None):
+        """
+        Return implied vol for a given maturity and strike
+
+        Parameters
+        ----------
+        maturity : Str
+            The date for the option maturity, expressed as 'YYYY-MM-DD'.
+        strike : Int
+            The strike expressed as a percent, where ATM = 100.
+
+        Returns
+        -------
+        imp_vol : Float
+            The implied volatility.
+
+        """
+        if smoothing is not None:
+            self.params['smoothing'] = smoothing
+
+        return VolMethods.get_vol(
+            maturity=maturity, strike=strike, params=self.params,
+            surface_models=self.surface_models)
+
+
+    def skewreport(self, months=None):
+        """
+        Print a report showing implied vols for 80%, 90% and ATM strikes and
+        selected tenor length
+
+        Parameters
+        ----------
+        months : Int
+            Number of months to display in report. The default is 12.
+
+        Returns
+        -------
+        Prints the report to the console.
+
+        """
+        if months is not None:
+            self.params['skew_months'] = months
+
+        vol_dict = VolMethods.create_vol_dict(
+            params=self.params, surface_models=self.surface_models)
+
+        return VolMethods.print_skew_report(
+            vol_dict=vol_dict, params=self.params)
