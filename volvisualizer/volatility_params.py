@@ -46,6 +46,7 @@ vol_params_dict = {
     'image_filename':'impvol',
     'image_dpi':50,
     'skew_months':12,
+    'skew_direction':'downside',
 
     # Dictionary of implied vol fields used in graph methods
     'vols_dict':{

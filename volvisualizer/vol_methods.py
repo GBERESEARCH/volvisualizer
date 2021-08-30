@@ -231,7 +231,7 @@ class VolMethods():
         vol_dict = {}
         start_date = dt.datetime.strptime(params['start_date'], '%Y-%m-%d')
         for month in range(1, params['skew_months']+1):
-            for strike in [80, 90, 100]:
+            for strike in [80, 90, 100, 110, 120]:
                 maturity = dt.datetime.strftime(
                     start_date + relativedelta(months=month), '%Y-%m-%d')
                 vol_dict[(month, strike)] = cls.get_vol(
@@ -241,8 +241,8 @@ class VolMethods():
         return vol_dict
 
 
-    @staticmethod
-    def print_skew_report(vol_dict, params):
+    @classmethod
+    def print_skew_report(cls, vol_dict, params):
         """
         Print a report showing implied vols for 80%, 90% and ATM strikes and
         selected tenor length
@@ -259,36 +259,75 @@ class VolMethods():
         Prints the report to the console.
 
         """
-        # Overall header
+        # Set decimal format
+        dp2 = Decimal(10) ** -2  # (equivalent to Decimal '0.01')
+
+        if params['skew_direction'] == 'full':
+            cls._full_skew(vol_dict=vol_dict, params=params, dp2=dp2)
+        else:
+            cls._header(params=params)
+
+            if params['skew_direction'] == 'up':
+                cls._upside_skew(vol_dict=vol_dict, params=params, dp2=dp2)
+
+            else:
+                cls._downside_skew(vol_dict=vol_dict, params=params, dp2=dp2)
+
+
+    @staticmethod
+    def _header(params):
+
         print('='*78)
-        print('{:^78}'.format('Skew Summary'))
+        print(': {:^74} :'.format('Skew Summary'))
         print('-'*78)
 
         # Contract traded on left and period covered on right
-        print('Underlying Ticker : {:<23}{} : {}'.format(
+        print(': Underlying Ticker : {:<19}{} : {} :'.format(
             params['ticker_label'],
             'Close of Business Date',
             params['start_date']))
         print('-'*78)
 
-        # Header rows
-        print('{:>25}  :  {}  :  {}  :  {}  :  {}'.format(
-            '80% Strike',
-            '90% Strike',
-            'ATM Vol',
-            '10% Skew',
-            '20% Skew'))
+        # Strike and skew headers
+        print(': {:^12} :{:^34} : {:^23} :'.format(
+            'Maturity',
+            'Strike',
+            'Skew'))
+        print('-'*78)
 
-        # Set decimal format
-        dp2 = Decimal(10) ** -2  # (equivalent to Decimal '0.01')
+        if params['skew_direction'] == 'up':
 
-        # Monthly skew summary out to 12 months
-        for month in range(1, params['skew_months']+1):
+            print(': {:>15}{:>7}   : {:>7}   : {:>7}   : {:>10}'\
+                  ' : {:>10} :'.format(
+                ': ',
+                'ATM',
+                '110%',
+                '120%',
+                '+10% Skew',
+                '+20% Skew'))
+
+        if params['skew_direction'] == 'down':
+            print(': {:>15}{:>7}   : {:>7}   : {:>7}   : {:>10}'\
+                  ' : {:>10} :'.format(
+                ': ',
+                '80%',
+                '90%',
+                'ATM',
+                '-10% Skew',
+                '-20% Skew'))
+
+
+    @staticmethod
+    def _downside_skew(vol_dict, params, dp2):
+
+        # Monthly skew summary for selected number of months
+        for month in range(1, params['skew_months'] + 1):
             if month < 10:
                 month_label = ' '+str(month)
             else:
                 month_label = str(month)
-            print('{} Month Vol {:>12}  :  {:>10}  :  {:>7}  :  {:>8}  :  {:>8}'.format(
+            print(': {} Month Vol : {:>7}   : {:>7}   : {:>7}   : {:>7}'\
+                  '    : {:>7}    :'.format(
                 month_label,
                 Decimal(vol_dict[(month, 80)]).quantize(dp2),
                 Decimal(vol_dict[(month, 90)]).quantize(dp2),
@@ -300,3 +339,92 @@ class VolMethods():
 
         print('-'*78)
         print('='*78)
+
+
+    @staticmethod
+    def _upside_skew(vol_dict, params, dp2):
+
+        # Monthly skew summary for selected number of months
+        for month in range(1, params['skew_months'] + 1):
+            if month < 10:
+                month_label = ' '+str(month)
+            else:
+                month_label = str(month)
+            print(': {} Month Vol : {:>7}   : {:>7}   : {:>7}   : {:>7}'\
+                  '    : {:>7}    :'.format(
+                month_label,
+                Decimal(vol_dict[(month, 100)]).quantize(dp2),
+                Decimal(vol_dict[(month, 110)]).quantize(dp2),
+                Decimal(vol_dict[(month, 120)]).quantize(dp2),
+                Decimal((vol_dict[(month, 110)]
+                         - vol_dict[(month, 100)]) / 10).quantize(dp2),
+                Decimal((vol_dict[(month, 120)]
+                         - vol_dict[(month, 100)]) / 20).quantize(dp2)))
+
+        print('-'*78)
+        print('='*78)
+
+
+    @staticmethod
+    def _full_skew(vol_dict, params, dp2):
+
+        print('='*115)
+        print(': {:^111} :'.format('Skew Summary'))
+        print('-'*115)
+
+        # Contract traded on left and period covered on right
+        print(': Underlying Ticker : {:<56}{} : {} :'.format(
+            params['ticker_label'],
+            'Close of Business Date',
+            params['start_date']))
+        print('-'*115)
+
+        # Strike and skew headers
+        print(': {:^13} : {:^47} : {:^45} :'.format(
+            'Maturity',
+            'Strike',
+            'Skew'))
+        print('-'*115)
+
+        # Header rows
+        print(': {:>16}{:>6}  : {:>6}  : {:>6}  : {:>6}  : {:>6}  : {:>9}'\
+              ' : {:>9} : {:>9} : {:>9} :'.format(
+            ': ',
+            '80%',
+            '90%',
+            'ATM',
+            '110%',
+            '120%',
+            '-20% Skew',
+            '-10% Skew',
+            '+10% Skew',
+            '+20% Skew'))
+
+        # Set decimal format
+        dp2 = Decimal(10) ** -2  # (equivalent to Decimal '0.01')
+
+        # Monthly skew summary for selected number of months
+        for month in range(1, params['skew_months'] + 1):
+            if month < 10:
+                month_label = ' '+str(month)
+            else:
+                month_label = str(month)
+            print(': {} Month Vol  : {:>6}  : {:>6}  : {:>6}  : {:>6}  : '\
+                  '{:>6}  : {:>7}   : {:>7}   : {:>7}   : {:>7}   :'.format(
+                month_label,
+                Decimal(vol_dict[(month, 80)]).quantize(dp2),
+                Decimal(vol_dict[(month, 90)]).quantize(dp2),
+                Decimal(vol_dict[(month, 100)]).quantize(dp2),
+                Decimal(vol_dict[(month, 110)]).quantize(dp2),
+                Decimal(vol_dict[(month, 120)]).quantize(dp2),
+                Decimal((vol_dict[(month, 80)]
+                         - vol_dict[(month, 100)]) / 20).quantize(dp2),
+                Decimal((vol_dict[(month, 90)]
+                         - vol_dict[(month, 100)]) / 10).quantize(dp2),
+                Decimal((vol_dict[(month, 110)]
+                         - vol_dict[(month, 100)]) / 10).quantize(dp2),
+                Decimal((vol_dict[(month, 120)]
+                         - vol_dict[(month, 100)]) / 20).quantize(dp2)))
+
+        print('-'*115)
+        print('='*115)

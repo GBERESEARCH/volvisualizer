@@ -359,7 +359,7 @@ class Volatility():
             surface_models=self.surface_models)
 
 
-    def skewreport(self, months=None):
+    def skewreport(self, months=None, direction=None):
         """
         Print a report showing implied vols for 80%, 90% and ATM strikes and
         selected tenor length
@@ -368,7 +368,9 @@ class Volatility():
         ----------
         months : Int
             Number of months to display in report. The default is 12.
-
+        direction : Str
+            The direction of skew to show. The options are 'up', 'down' and
+            'full'. The default is 'down'
         Returns
         -------
         Prints the report to the console.
@@ -376,6 +378,9 @@ class Volatility():
         """
         if months is not None:
             self.params['skew_months'] = months
+
+        if direction is not None:
+            self.params['skew_direction'] = direction
 
         vol_dict = VolMethods.create_vol_dict(
             params=self.params, surface_models=self.surface_models)

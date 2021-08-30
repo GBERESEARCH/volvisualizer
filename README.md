@@ -3,7 +3,7 @@
 
 &nbsp;
 
-A tool to extract option data from Yahoo Finance and provide simple visualization and smoothing to get a general sense of the shape of the volatility surface.
+A tool to extract option data from Yahoo Finance and provide visualization and smoothing to gain understanding of the supply / demand balance of options of varying strikes and tenors.
 
 &nbsp;
 
@@ -49,7 +49,7 @@ imp = Volatility(ticker='^SPX', start_date='2021-8-18', wait=0.5, monthlies=True
 
 &nbsp;
 
-#### Line graph of individual option expiries.
+### Line graph of individual option expiries.
 ```
 imp.visualize(graphtype='line')
 ```
@@ -61,7 +61,7 @@ imp.visualize(graphtype='line')
 
 &nbsp;
 
-#### 3D Scatter plot of each option implied volatility by strike and expiry.
+### 3D Scatter plot of each option implied volatility by strike and expiry.
 ```
 imp.visualize(graphtype='scatter', voltype='ask')
 ```
@@ -69,7 +69,7 @@ imp.visualize(graphtype='scatter', voltype='ask')
 
 &nbsp;
 
-#### 3D Wireframe plot with scatter of each option implied volatility by strike and expiry.
+### 3D Wireframe plot with scatter of each option implied volatility by strike and expiry.
 ```
 imp.visualize(graphtype='surface', surfacetype='spline', scatter=True, smoothing=True)
 ```
@@ -77,7 +77,7 @@ imp.visualize(graphtype='surface', surfacetype='spline', scatter=True, smoothing
 
 &nbsp;
 
-#### 3D Meshgrid plot of each option implied volatility by strike and expiry.
+### 3D Meshgrid plot of each option implied volatility by strike and expiry.
 ```
 imp.visualize(graphtype='surface', surfacetype='mesh', smoothing=True)
 ```
@@ -85,7 +85,7 @@ imp.visualize(graphtype='surface', surfacetype='mesh', smoothing=True)
 
 &nbsp;
 
-#### 3D Interactive plot of each option implied volatility by strike and expiry that can be rotated and zoomed.
+### 3D Interactive plot of each option implied volatility by strike and expiry that can be rotated and zoomed.
 ```
 imp.visualize(graphtype='surface',surfacetype='interactive_spline', smoothing=True, notebook=False, colorscale='Blues', scatter=True, opacity=0.8)
 ```
@@ -97,7 +97,7 @@ imp.visualize(graphtype='surface',surfacetype='interactive_spline', smoothing=Tr
 
 &nbsp;
 
-#### 3D Interactive plot of each option implied volatility by strike and expiry using radial basis function interpolation.
+### 3D Interactive plot of each option implied volatility by strike and expiry using radial basis function interpolation.
 ```
 imp.visualize(graphtype='surface', surfacetype='interactive_spline', rbffunc='cubic', colorscale='Jet', smoothing=True)
 ```
@@ -106,7 +106,7 @@ imp.visualize(graphtype='surface', surfacetype='interactive_spline', rbffunc='cu
 
 &nbsp;
 
-#### Extract Implied Volatility for a given maturity and strike
+### Extract Implied Volatility for a given maturity and strike
 ```
 imp.vol(maturity='2021-09-30', strike=80)
 ```
@@ -114,15 +114,33 @@ imp.vol(maturity='2021-09-30', strike=80)
 
 &nbsp;
 
-#### Skew Summary Report
+### Skew Summary Report
+&nbsp;
+   - Downside TSLA skew out to 12 months
+
 ```
-imp.skewreport(months=12)
+imp.skewreport(months=12, direction='down')
 ```
-![aapl_skew_270821](images/aapl_skew_270821.png)
+![tsla_skew_270821_down](images/tsla_skew_270821_down.png)
 
 &nbsp;
 
-![spx_skew_270821](images/spx_skew_270821.png)
+   - Upside GLD skew out to 9 months
+&nbsp;
+
+```
+imp.skewreport(months=12, direction='up')
+```
+![gld_skew_270821_up](images/gld_skew_270821_up.png)
+
+&nbsp;
+
+   - Upside and Downside SPX skew out to 15 months
+
+```
+imp.skewreport(months=15, direction='full')
+```
+![spx_skew_270821_full](images/spx_skew_270821_full.png)
 
 &nbsp;
 
