@@ -93,8 +93,13 @@ class Volatility():
         params = Utils.init_params(inputs)
         tables = {}
 
+        # Update holiday calendar
+        params = Data.trading_calendar(params=params)
+
+        # Generate option data
         params, tables = Data.create_option_data(params=params, tables=tables)
 
+        # Map volatilities
         surface_models = {}
         surface_models['vol_surface'], \
             surface_models['vol_surface_smoothed'] = VolMethods.map_vols(

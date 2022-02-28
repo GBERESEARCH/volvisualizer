@@ -5,7 +5,7 @@ Market data import and transformation functions
 import calendar
 from collections import Counter
 import copy
-from datetime import date
+from datetime import datetime, date, timedelta
 import time
 from urllib.request import FancyURLopener
 import warnings
@@ -14,6 +14,7 @@ from bs4 import BeautifulSoup
 from lxml import html
 import numpy as np
 import pandas as pd
+from pandas.tseries.holiday import get_calendar, HolidayCalendarFactory, GoodFriday
 import pytz
 from volvisualizer.utils import ImpliedVol
 # pylint: disable=invalid-name
@@ -379,7 +380,7 @@ class Data():
                 tables['data']['Last Trade Date'],
                 format='%Y-%m-%d %I:%M%p EDT')
 
-        except KeyError:
+        except ValueError:
             tables['data']['Last Trade Date'] = pd.to_datetime(
                 tables['data']['Last Trade Date'],
                 format='%Y-%m-%d %I:%M%p EST')
@@ -542,6 +543,9 @@ class Data():
                 # Extract the date corresponding to the 3rd Friday
                 expiry = monthcal[2][-1]
 
+                if expiry in params['trade_holidays']:
+                    expiry = expiry - timedelta(days=1)
+
                 # Calculate the number of days until that expiry
                 ttm = (expiry - dt.date.today()).days
 
@@ -666,7 +670,7 @@ class Data():
         if params['spot'] is None:
             tree = html.fromstring(params['html_doc'])
             priceparse = tree.xpath(
-                '//span[@class="Trsdu(0.3s) Fw(b) Fz(36px) Mb(-4px) D(ib)"]/text()')
+                '//fin-streamer[@class="Fw(b) Fz(36px) Mb(-4px) D(ib)"]/text()')
             params['spot'] = float(
                 [str(p) for p in priceparse][0].replace(',',''))
 
@@ -866,3 +870,45 @@ class Data():
         warnings.filterwarnings("default", category=RuntimeWarning)
 
         return row
+
+
+    @staticmethod
+    def trading_calendar(params):
+        """
+        Generate list of trading holidays
+
+        Parameters
+        ----------
+        params : Dict
+            Dictionary of key parameters.
+
+        Returns
+        -------
+        params : Dict
+            Dictionary of key parameters.
+
+        """
+        # Create calendar instance
+        cal = get_calendar('USFederalHolidayCalendar')
+        cal_mod = copy.deepcopy(cal)
+
+        start = date.today()
+        end = start + timedelta(days=2500)
+
+        # Remove Columbus Day rule and Veteran's Day rule
+        cal_mod.rules.pop(7)
+        cal_mod.rules.pop(6)
+
+        # Create new calendar generator
+        tradingCal = HolidayCalendarFactory(
+            'TradingCalendar', cal_mod, GoodFriday)
+
+        tcal = tradingCal()
+
+        holiday_array = tcal.holidays(start=start, end=end).to_pydatetime()
+
+        params['trade_holidays'] = []
+        for hol in holiday_array:
+            params['trade_holidays'].append(hol.date())
+
+        return params
