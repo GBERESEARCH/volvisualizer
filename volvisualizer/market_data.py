@@ -861,7 +861,13 @@ class Data():
                 row[output_row] = output
 
             except KeyError:
-                print("Error with option: Strike="+str(strike)+
+                print("Key Error with option: Strike="+str(strike)+
+                          " TTM="+str(round(row['TTM'], 3))+
+                          " vol="+str(row[input_row])+
+                          " option="+option)
+
+            except ValueError:
+                print("Value Error with option: Strike="+str(strike)+
                           " TTM="+str(round(row['TTM'], 3))+
                           " vol="+str(row[input_row])+
                           " option="+option)
