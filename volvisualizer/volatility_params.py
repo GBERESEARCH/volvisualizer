@@ -80,6 +80,22 @@ vol_params_dict = {
         'naive':'implied_vol_naive'
         },
 
+    # Dictionary mapping tenor buckets to number of days
+    'ir_tenor_dict':{
+        '1 Mo':30,
+        '2 Mo':60,
+        '3 Mo':90,
+        '6 Mo':180,
+        '1 Yr':365,
+        '2 Yr':730,
+        '3 Yr':1095,
+        '5 Yr':1826,
+        '7 Yr':2556,
+        '10 Yr':3652,
+        '20 Yr':7305,
+        '30 Yr':10952
+        },
+
     # Parameters to overwrite mpl_style defaults
     'mpl_line_params':{
         'axes.edgecolor':'black',
