@@ -657,6 +657,7 @@ class Graph():
                     showbackground=True,
                     zerolinecolor="white"
                     ),
+                aspectmode='cube',
                 # Label axes
                 xaxis_title='Time to Expiration (Days)',
                 yaxis_title='Strike',
