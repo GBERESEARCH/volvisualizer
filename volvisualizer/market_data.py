@@ -219,6 +219,7 @@ class Data():
     @staticmethod
     def _extract_web_data(params):
 
+        # Create an empty dictionary
         raw_web_data = {}
 
         # each url needs to have an option expiry date associated with
@@ -228,10 +229,16 @@ class Data():
             # UrlOpener function downloads the data
             urlopener = UrlOpener()
             weburl = urlopener.open(url)
-            raw_web_data[input_date] = weburl.read()
+            try:
+                raw_web_data[input_date] = weburl.read()
 
-            # wait between each query so as not to overload server
-            time.sleep(params['wait'])
+                # wait between each query so as not to overload server
+                time.sleep(params['wait'])
+
+            # If there is a problem, report the date and apply extended wait
+            except ValueError:
+                print("Problem with "+input_date+" data")
+                time.sleep(5)
 
         return raw_web_data
 
