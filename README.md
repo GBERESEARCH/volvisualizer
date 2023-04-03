@@ -129,7 +129,7 @@ imp.skewreport(months=12, direction='down')
 &nbsp;
 
 ```
-imp.skewreport(months=12, direction='up')
+imp.skewreport(months=9, direction='up')
 ```
 ![gld_skew_270821_up](images/gld_skew_270821_up.png)
 
