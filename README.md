@@ -27,15 +27,15 @@ $ .venv\scripts\activate
 ```
 Ensure pip is up to date
 ``` 
-(.venv) python -m pip install --upgrade pip
+$ (.venv) python -m pip install --upgrade pip
 ```
 Install Spyder
 ```
-(.venv) python -m pip install spyder
+$ (.venv) python -m pip install spyder
 ```
 Install package
 ```
-(.venv) python -m pip install volvisualizer
+$ (.venv) python -m pip install volvisualizer
 ```
 
 &nbsp;
