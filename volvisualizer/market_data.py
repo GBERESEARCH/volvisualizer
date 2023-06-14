@@ -5,24 +5,14 @@ Market data import and transformation functions
 import copy
 from datetime import date, timedelta
 import time
-from urllib.request import FancyURLopener
 import warnings
 import datetime as dt
 from bs4 import BeautifulSoup
 import pandas as pd
 from pandas.tseries.holiday import get_calendar, HolidayCalendarFactory, GoodFriday
-from volvisualizer.market_data_prep import DataPrep
+from volvisualizer.market_data_prep import DataPrep, UrlOpener
 warnings.filterwarnings("ignore", category=DeprecationWarning)
 # pylint: disable=invalid-name
-
-# Class used to open urls for financial data
-class UrlOpener(FancyURLopener):
-    """
-    Extract data from Yahoo Finance URL
-
-    """
-    version = 'w3m/0.5.3+git20180125'
-
 
 class Data():
     """
@@ -179,7 +169,7 @@ class Data():
         response = urlopener.open(url)
 
         # Collect the text from this object
-        params['html_doc'] = response.read()
+        params['html_doc'] = response.text
 
         # Use Beautiful Soup to parse this
         soup = BeautifulSoup(params['html_doc'], features="lxml")
@@ -230,7 +220,7 @@ class Data():
             urlopener = UrlOpener()
             weburl = urlopener.open(url)
             try:
-                raw_web_data[input_date] = weburl.read()
+                raw_web_data[input_date] = weburl.text
 
                 # wait between each query so as not to overload server
                 time.sleep(params['wait'])

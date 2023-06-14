@@ -7,26 +7,60 @@ from collections import Counter
 import copy
 import datetime as dt
 from datetime import date, timedelta
-from urllib.request import FancyURLopener
+import random
 import warnings
 from lxml import html
 import numpy as np
 import pandas as pd
 import pytz
+import requests
 from scipy import interpolate
 from volvisualizer.vol_methods import ImpliedVol
-
+from volvisualizer.volatility_params import USER_AGENTS
 
 warnings.filterwarnings("ignore", category=DeprecationWarning)
 # pylint: disable=invalid-name
 
-# Class used to open urls for financial data
-class UrlOpener(FancyURLopener):
+
+class UrlOpener:
     """
     Extract data from Yahoo Finance URL
 
     """
-    version = 'w3m/0.5.3+git20180125'
+    request_headers = {
+        "accept": "*/*",
+        "accept-encoding": "gzip, deflate, br",
+        "accept-language": "en-US,en;q=0.9",
+        "origin": "https://finance.yahoo.com",
+        "referer": "https://finance.yahoo.com",
+        "sec-fetch-dest": "empty",
+        "sec-fetch-mode": "cors",
+        "sec-fetch-site": "same-site",
+    }
+    user_agent = random.choice(USER_AGENTS)
+    request_headers["User-Agent"] = user_agent
+
+    def __init__(self):
+        self._session = requests
+
+    def open(self, url):
+        """
+        Extract data from Yahoo Finance URL
+
+        Parameters
+        ----------
+        url : Str
+            The URL to extract data from.
+
+        Returns
+        -------
+        response : Response object
+            Response object of requests module.
+
+        """
+        response = self._session.get(url=url, headers=self.request_headers)
+        
+        return response
 
 
 class DataPrep():
@@ -735,7 +769,7 @@ class DataPrep():
         urlopener = UrlOpener()
         response = urlopener.open(url)
 
-        html_doc = response.read()
+        html_doc = response.text
 
         data = pd.read_html(html_doc)
 
@@ -750,7 +784,7 @@ class DataPrep():
         urlopener = UrlOpener()
         response = urlopener.open(url)
 
-        html_doc = response.read()
+        html_doc = response.text
 
         tree = html.fromstring(html_doc)
 
