@@ -170,7 +170,7 @@ imp.skewreport(months=15, direction='full')
 &nbsp;
 
 Some simplifying assumptions have been made:
-  - interest rates are constant; for greater accuracy a term structure should be employed.
+  - interest rates are taken from US Treasury Par Yields and these may not be the most appropriate instruments to discount with.
   - the prices are taken to be valid at the snap time; if the last trade is some time ago and / or the market is volatile then this will be less accurate.
 
 &nbsp;
