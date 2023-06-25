@@ -749,7 +749,7 @@ class DataPrep():
             try:
                 div_yield = cls._spx_div_yield()
             except ValueError:
-                print("No dividend data for "+ticker)
+                print("No dividend data for SPX")
                 div_yield = '0.0%'
         else:
             try:
@@ -758,22 +758,29 @@ class DataPrep():
                 print("No dividend data for "+ticker)
                 div_yield = '0.0%'
 
-        return np.round(float(div_yield.rstrip('%'))/100, 5)
+        try: 
+            result = np.round(float(div_yield.rstrip('%'))/100, 5)
+        except ValueError:
+            print("No valid dividend data for "+ticker)
+            result = 0.0
+
+        return result
 
 
     @staticmethod
     def _stock_dividend_yield(ticker):
 
-        url = 'https://ycharts.com/companies/'+ticker+'/dividend_yield'
+        url = 'https://stockanalysis.com/stocks/'+ticker+'/dividend/'
 
-        urlopener = UrlOpener()
-        response = urlopener.open(url)
+        r = requests.get(url)
 
-        html_doc = response.text
+        html_doc = r.text
 
-        data = pd.read_html(html_doc)
+        tree = html.fromstring(html_doc)
+        
+        parse = tree.xpath("//*[contains(text(), 'Dividend Yield')]/div/text()")
 
-        return data[0]['Value'][0]
+        return [str(p) for p in parse][0].replace('\n','')
 
 
     @staticmethod
