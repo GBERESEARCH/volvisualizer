@@ -12,7 +12,7 @@ import pandas as pd
 import scipy as sp
 import scipy.interpolate as inter
 import scipy.stats as si
-# pylint: disable=invalid-name
+# pylint: disable=invalid-name, consider-using-f-string
 
 class ImpliedVol():
     """

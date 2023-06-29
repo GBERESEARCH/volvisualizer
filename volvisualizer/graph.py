@@ -15,7 +15,7 @@ from mpl_toolkits.mplot3d import Axes3D # pylint: disable=unused-import
 from plotly.offline import plot
 from scipy.interpolate import griddata
 from volvisualizer.vol_methods import VolMethods
-# pylint: disable=invalid-name
+# pylint: disable=invalid-name, consider-using-f-string
 
 class Graph():
     """
@@ -24,7 +24,7 @@ class Graph():
     """
     @classmethod
     def line_graph(
-        cls, 
+        cls,
         params: dict,
         tables: dict) -> tuple[dict, dict]:
         """
@@ -126,7 +126,7 @@ class Graph():
 
     @classmethod
     def scatter_3d(
-        cls, 
+        cls,
         params: dict,
         tables: dict) -> tuple[dict, dict]:
         """
@@ -187,7 +187,7 @@ class Graph():
 
     @classmethod
     def surface_3d(
-        cls, 
+        cls,
         params: dict,
         tables: dict) -> tuple[dict, dict]:
         """
@@ -367,8 +367,8 @@ class Graph():
 
     @classmethod
     def _spline_graph(
-        cls, 
-        params: dict, 
+        cls,
+        params: dict,
         tables: dict) -> mplfig.Figure:
 
         # Create arrays across x and y-axes of equally spaced points
@@ -415,8 +415,8 @@ class Graph():
 
     @classmethod
     def _interactive_graph(
-        cls, 
-        params: dict, 
+        cls,
+        params: dict,
         tables: dict) -> go.Figure:
 
         params = cls._set_contours(params=params, tables=tables)
@@ -576,11 +576,11 @@ class Graph():
                     z=params['z'],
                     mode='markers',
                     # Set size, color and opacity of each data point
-                    marker=dict(
-                        size=2,
-                        color='red',
-                        opacity=0.9
-                        )
+                    marker={
+                        'size':2,
+                        'color':'red',
+                        'opacity':0.9
+                        }
                     )
                 ])
 
@@ -594,11 +594,11 @@ class Graph():
                     z=params['z'],
                     mode='markers',
                     # Set size, color and opacity of each data point
-                    marker=dict(
-                        size=2,
-                        color='red',
-                        opacity=0.9
-                        )
+                    marker={
+                        'size':2,
+                        'color':'red',
+                        'opacity':0.9
+                        }
                     )
                 ])
 
@@ -654,37 +654,42 @@ class Graph():
         fig: go.Figure) -> go.Figure:
 
         # Set initial camera angle
-        params['camera'] = dict(
-            eye=dict(x=2, y=1, z=1)
-        )
+        params['camera'] = {
+            'eye': {
+                'x':2,
+                'y':1,
+                'z':1
+                }
+            }
 
         # Set Time To Expiration to increase left to right
         fig.update_scenes(xaxis_autorange="reversed")
         fig.update_layout(
-            scene = dict(
-                xaxis = dict(
-                    backgroundcolor="rgb(200, 200, 230)",
-                    gridcolor="white",
-                    showbackground=True,
-                    zerolinecolor="white"
-                    ),
-                yaxis = dict(
-                    backgroundcolor="rgb(230, 200,230)",
-                    gridcolor="white",
-                    showbackground=True,
-                    zerolinecolor="white"
-                    ),
-                zaxis = dict(
-                    backgroundcolor="rgb(230, 230,200)",
-                    gridcolor="white",
-                    showbackground=True,
-                    zerolinecolor="white"
-                    ),
-                aspectmode='cube',
+            scene={
+                'xaxis': {
+                    'backgroundcolor': "rgb(200, 200, 230)",
+                    'gridcolor': "white",
+                    'showbackground': True,
+                    'zerolinecolor': "white"
+                    },
+                'yaxis': {
+                    'backgroundcolor': "rgb(230, 200,230)",
+                    'gridcolor': "white",
+                    'showbackground': True,
+                    'zerolinecolor': "white"
+                    },
+                'zaxis': {
+                    'backgroundcolor': "rgb(230, 230,200)",
+                    'gridcolor': "white",
+                    'showbackground': True,
+                    'zerolinecolor': "white"
+                    },
+                'aspectmode': 'cube',
                 # Label axes
-                xaxis_title='Time to Expiration (Days)',
-                yaxis_title='Strike',
-                zaxis_title='Implied Volatility %',),
+                'xaxis_title': 'Time to Expiration (Days)',
+                'yaxis_title': 'Strike',
+                'zaxis_title': 'Implied Volatility %'
+                },
             # Specify title with ticker label, voltype
             # and date
             title={
@@ -699,15 +704,20 @@ class Graph():
                 'x':0.5,
                 'xanchor':'center',
                 'yanchor':'top',
-                'font':dict(
-                    size=20,
-                    color="black"
-                    )
+                'font': {
+                    'size': 20,
+                    'color': "black"
+                    }
                 },
             autosize=False,
             width=800,
             height=800,
-            margin=dict(l=65, r=50, b=65, t=90),
+            margin={
+                'l':65,
+                'r':50,
+                'b':65,
+                't':90
+                },
             scene_camera=params['camera'])
 
         return fig
@@ -776,7 +786,7 @@ class Graph():
 
     @staticmethod
     def _image_save(
-        params: dict, 
+        params: dict,
         fig: mplfig.Figure | go.Figure) -> mplfig.Figure | go.Figure:
 
         # Create image folder if it does not already exist

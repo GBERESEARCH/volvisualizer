@@ -340,7 +340,7 @@ class Volatility():
 
 
     def vol(
-        self, 
+        self,
         maturity: str,
         strike: int,
         smoothing: bool | None = None):

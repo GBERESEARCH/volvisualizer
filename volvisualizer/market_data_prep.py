@@ -58,8 +58,9 @@ class UrlOpener:
             Response object of requests module.
 
         """
-        response = self._session.get(url=url, headers=self.request_headers)
-        
+        response = self._session.get(
+            url=url, headers=self.request_headers, timeout=10)
+
         return response
 
 
@@ -791,7 +792,7 @@ class DataPrep():
                 print("No dividend data for "+ticker)
                 div_yield = '0.0%'
 
-        try: 
+        try:
             result = np.round(float(div_yield.rstrip('%'))/100, 5)
         except ValueError:
             print("No valid dividend data for "+ticker)
@@ -805,12 +806,12 @@ class DataPrep():
 
         url = 'https://stockanalysis.com/stocks/'+ticker+'/dividend/'
 
-        r = requests.get(url)
+        r = requests.get(url, timeout=10)
 
         html_doc = r.text
 
         tree = html.fromstring(html_doc)
-        
+
         parse = tree.xpath("//*[contains(text(), 'Dividend Yield')]/div/text()")
 
         return [str(p) for p in parse][0].replace('\n','')
