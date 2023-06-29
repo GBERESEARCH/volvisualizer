@@ -10,6 +10,7 @@ from dateutil.relativedelta import relativedelta
 import numpy as np
 import pandas as pd
 import scipy as sp
+import scipy.interpolate as inter
 import scipy.stats as si
 # pylint: disable=invalid-name
 
@@ -19,7 +20,7 @@ class ImpliedVol():
 
     """
     @classmethod
-    def implied_vol_newton_raphson(cls, opt_params):
+    def implied_vol_newton_raphson(cls, opt_params: dict) -> float | str:
         """
         Finds implied volatility using Newton-Raphson method - needs
         knowledge of partial derivative of option pricing formula
@@ -95,7 +96,7 @@ class ImpliedVol():
 
 
     @classmethod
-    def implied_vol_bisection(cls, opt_params):
+    def implied_vol_bisection(cls, opt_params: dict) -> float | str:
         """
         Finds implied volatility using bisection method.
 
@@ -180,7 +181,7 @@ class ImpliedVol():
 
 
     @classmethod
-    def implied_vol_naive(cls, opt_params):
+    def implied_vol_naive(cls, opt_params: dict) -> float:
         """
         Finds implied volatility using simple naive iteration,
         increasing precision each time the difference changes sign.
@@ -264,7 +265,7 @@ class ImpliedVol():
 
 
     @classmethod
-    def implied_vol_naive_verbose(cls, opt_params):
+    def implied_vol_naive_verbose(cls, opt_params: dict) -> float:
         """
         Finds implied volatility using simple naive iteration,
         increasing precision each time the difference changes sign.
@@ -353,7 +354,9 @@ class ImpliedVol():
 
 
     @staticmethod
-    def black_scholes_merton(opt_params, sigma):
+    def black_scholes_merton(
+        opt_params: dict,
+        sigma: float) -> float:
         """
         Black-Scholes-Merton Option price
 
@@ -422,7 +425,9 @@ class ImpliedVol():
 
 
     @staticmethod
-    def black_scholes_merton_vega(opt_params, sigma):
+    def black_scholes_merton_vega(
+        opt_params: dict,
+        sigma: float) -> float:
         """
         Black-Scholes-Merton Option Vega
 
@@ -472,7 +477,10 @@ class VolMethods():
 
     """
     @classmethod
-    def smooth(cls, params, tables):
+    def smooth(
+        cls,
+        params: dict,
+        tables: dict) -> tuple[dict, dict]:
         """
         Create a column of smoothed implied vols
 
@@ -569,7 +577,9 @@ class VolMethods():
 
 
     @staticmethod
-    def _vol_map(row, tables):
+    def _vol_map(
+        row: pd.Series,
+        tables: dict) -> pd.Series:
         """
         Map value calculated in smooth surface DataFrame to
         'Smoothed Vol' column.
@@ -592,7 +602,10 @@ class VolMethods():
 
 
     @classmethod
-    def map_vols(cls, params, tables):
+    def map_vols(
+        cls,
+        params: dict,
+        tables: dict) -> tuple[inter._rbf.Rbf, inter._rbf.Rbf]:
         """
         Create vol surface mapping function
 
@@ -633,7 +646,11 @@ class VolMethods():
 
 
     @staticmethod
-    def get_vol(maturity, strike, params, surface_models):
+    def get_vol(
+        maturity: str,
+        strike: int,
+        params: dict,
+        surface_models: dict) -> float:
         """
         Return implied vol for a given maturity and strike
 
@@ -664,7 +681,10 @@ class VolMethods():
 
 
     @classmethod
-    def create_vol_dict(cls, params, surface_models):
+    def create_vol_dict(
+        cls,
+        params: dict,
+        surface_models: dict) -> dict:
         """
         Create dictionary of implied vols by tenor and strike to use in skew
         report
@@ -696,7 +716,10 @@ class VolMethods():
 
 
     @classmethod
-    def print_skew_report(cls, vol_dict, params):
+    def print_skew_report(
+        cls,
+        vol_dict: dict,
+        params: dict) -> None:
         """
         Print a report showing implied vols for 80%, 90% and ATM strikes and
         selected tenor length
@@ -729,7 +752,7 @@ class VolMethods():
 
 
     @staticmethod
-    def _header(params):
+    def _header(params: dict) -> None:
 
         print('='*78)
         print(': {:^74} :'.format('Skew Summary'))
@@ -772,7 +795,10 @@ class VolMethods():
 
 
     @staticmethod
-    def _downside_skew(vol_dict, params, dp2):
+    def _downside_skew(
+        vol_dict: dict,
+        params: dict,
+        dp2: Decimal) -> None:
 
         # Monthly skew summary for selected number of months
         for month in range(1, params['skew_months'] + 1):
@@ -796,7 +822,10 @@ class VolMethods():
 
 
     @staticmethod
-    def _upside_skew(vol_dict, params, dp2):
+    def _upside_skew(
+        vol_dict: dict,
+        params: dict,
+        dp2: Decimal) -> None:
 
         # Monthly skew summary for selected number of months
         for month in range(1, params['skew_months'] + 1):
@@ -820,7 +849,10 @@ class VolMethods():
 
 
     @staticmethod
-    def _full_skew(vol_dict, params, dp2):
+    def _full_skew(
+        vol_dict: dict,
+        params: dict,
+        dp2: Decimal) -> None:
 
         print('='*115)
         print(': {:^111} :'.format('Skew Summary'))
