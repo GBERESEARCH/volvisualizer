@@ -16,7 +16,7 @@ class Utils():
 
     """
     @classmethod
-    def init_params(cls, inputs):
+    def init_params(cls, inputs: dict) -> dict:
         """
         Initialise parameter dictionary
         Parameters
@@ -51,7 +51,7 @@ class Utils():
 
 
     @staticmethod
-    def set_start_date(params):
+    def set_start_date(params: dict) -> dict:
         """
         Set start date to previous working day if not provided
 
@@ -74,7 +74,9 @@ class Utils():
 
 
     @staticmethod
-    def set_interest_rate(params, r=None):
+    def set_interest_rate(
+        params: dict,
+        r: float | None = None) -> dict:
         """
         Returns the yield curve interpolation function
 
@@ -97,7 +99,7 @@ class Utils():
 
 
     @staticmethod
-    def set_dividend_yield(params):
+    def set_dividend_yield(params: dict) -> dict:
         """
         Returns the dividend yield
 
