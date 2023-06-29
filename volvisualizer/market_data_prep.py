@@ -43,7 +43,7 @@ class UrlOpener:
     def __init__(self):
         self._session = requests
 
-    def open(self, url):
+    def open(self, url: str) -> requests.models.Response:
         """
         Extract data from Yahoo Finance URL
 
@@ -69,7 +69,10 @@ class DataPrep():
 
     """
     @classmethod
-    def transform(cls, params, tables):
+    def transform(
+        cls,
+        params: dict,
+        tables: dict) -> tuple[dict, dict]:
         """
         Perform some filtering / transforming of the option data
 
@@ -154,7 +157,7 @@ class DataPrep():
 
 
     @staticmethod
-    def _trade_columns(tables):
+    def _trade_columns(tables: dict) -> dict:
 
         # Create a column of the Trade Day
         tables['data']['Last Trade Day'] = (
@@ -196,7 +199,10 @@ class DataPrep():
 
 
     @classmethod
-    def _filters(cls, params, tables):
+    def _filters(
+        cls,
+        params: dict,
+        tables: dict) -> tuple[dict, dict]:
 
         # If a minutes parameter is supplied, filter for most recent
         # minutes
@@ -235,7 +241,9 @@ class DataPrep():
 
 
     @staticmethod
-    def _minopts(params, data):
+    def _minopts(
+        params: dict,
+        data: pd.DataFrame) -> pd.DataFrame:
         # Create a dictionary of the number of options for each
         # maturity
         mat_dict = dict(Counter(data['Days']))
@@ -253,7 +261,9 @@ class DataPrep():
 
 
     @staticmethod
-    def _monthlies(params, tables):
+    def _monthlies(
+        params: dict,
+        tables: dict) -> tuple[dict, dict]:
 
         # If the monthlies flag is set
         if params['monthlies'] is True:
@@ -312,7 +322,10 @@ class DataPrep():
 
 
     @classmethod
-    def combine(cls, params, tables):
+    def combine(
+        cls,
+        params: dict,
+        tables: dict) -> tuple[dict, dict]:
         """
         Calculate implied volatilities for specified put and call
         strikes and combine.
@@ -415,7 +428,10 @@ class DataPrep():
 
 
     @classmethod
-    def _create_strike_range(cls, params, tables):
+    def _create_strike_range(
+        cls,
+        params: dict,
+        tables: dict) -> dict:
 
         # Extract the spot level from the html data
         if params['spot'] is None:
@@ -462,7 +478,9 @@ class DataPrep():
 
 
     @staticmethod
-    def _strike_filters(params, divisor):
+    def _strike_filters(
+        params: dict,
+        divisor: float) -> tuple[float, float, float]:
 
         # Calculate the point to switch from put to call options
         roundspot = (
@@ -480,7 +498,9 @@ class DataPrep():
 
 
     @staticmethod
-    def _create_divisor(params, tables):
+    def _create_divisor(
+        params: dict,
+        tables: dict) -> dict:
 
         # Take the set of all the option strikes in the data
         strikes = set(tables['data']['Strike'])
@@ -504,7 +524,12 @@ class DataPrep():
 
 
     @classmethod
-    def _imp_vol_apply(cls, params, input_data, strike, option):
+    def _imp_vol_apply(
+        cls,
+        params: dict,
+        input_data: pd.DataFrame,
+        strike: float,
+        option: str) -> pd.DataFrame:
         """
         Apply _implied_vol_by_row method to each row of a DataFrame.
 
@@ -548,7 +573,12 @@ class DataPrep():
 
 
     @classmethod
-    def _imp_vol_by_row(cls, row, params, strike, option):
+    def _imp_vol_by_row(
+        cls,
+        row: pd.Series,
+        params: dict,
+        strike: float,
+        option: str) -> pd.Series:
         """
         Calculate implied vol for one row of a DataFrame.
 
@@ -630,7 +660,10 @@ class DataPrep():
 
 
     @classmethod
-    def interest_rate(cls, ttm, yield_curve=None):
+    def interest_rate(
+        cls,
+        ttm: int,
+        yield_curve: interpolate.interp1d | None = None) -> float:
         """
         Returns the interest rate for a given number of days to maturity
 
@@ -655,7 +688,7 @@ class DataPrep():
 
 
     @staticmethod
-    def generate_yield_curve(r=None):
+    def generate_yield_curve(r: float | None = None) -> interpolate.interp1d:
         """
         Returns a yield curve interpolation function
 
@@ -728,7 +761,7 @@ class DataPrep():
 
 
     @classmethod
-    def dividend_yield(cls, ticker):
+    def dividend_yield(cls, ticker: str) -> float:
         """
         Returns the dividend yield for a given ticker
 
@@ -768,7 +801,7 @@ class DataPrep():
 
 
     @staticmethod
-    def _stock_dividend_yield(ticker):
+    def _stock_dividend_yield(ticker: str) -> str:
 
         url = 'https://stockanalysis.com/stocks/'+ticker+'/dividend/'
 
@@ -784,7 +817,7 @@ class DataPrep():
 
 
     @staticmethod
-    def _spx_div_yield():
+    def _spx_div_yield() -> str:
 
         url = 'https://www.multpl.com/s-p-500-dividend-yield'
 
