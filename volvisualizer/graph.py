@@ -5,10 +5,12 @@ Methods for graphing volatility data
 import copy
 import os
 import warnings
+import matplotlib.figure as mplfig
 import matplotlib.pyplot as plt
 import numpy as np
 import plotly.graph_objects as go
 import scipy as sp
+from matplotlib import axes
 from mpl_toolkits.mplot3d import Axes3D # pylint: disable=unused-import
 from plotly.offline import plot
 from scipy.interpolate import griddata
@@ -21,7 +23,10 @@ class Graph():
 
     """
     @classmethod
-    def line_graph(cls, params, tables):
+    def line_graph(
+        cls, 
+        params: dict,
+        tables: dict) -> tuple[dict, dict]:
         """
         Displays a linegraph of each option maturity plotted by strike
         and implied vol
@@ -120,7 +125,10 @@ class Graph():
 
 
     @classmethod
-    def scatter_3d(cls, params, tables):
+    def scatter_3d(
+        cls, 
+        params: dict,
+        tables: dict) -> tuple[dict, dict]:
         """
         Displays a 3D scatter plot of each option implied vol against
         strike and maturity
@@ -178,7 +186,10 @@ class Graph():
 
 
     @classmethod
-    def surface_3d(cls, params, tables):
+    def surface_3d(
+        cls, 
+        params: dict,
+        tables: dict) -> tuple[dict, dict]:
         """
         Displays a 3D surface plot of the implied vol surface against
         strike and maturity
@@ -305,7 +316,7 @@ class Graph():
 
 
     @classmethod
-    def _trisurf_graph(cls, params):
+    def _trisurf_graph(cls, params: dict) -> mplfig.Figure:
 
         # Create figure and axis objects and format
         fig, ax = cls._graph_format(params=params)
@@ -321,7 +332,7 @@ class Graph():
 
 
     @classmethod
-    def _mesh_graph(cls, params):
+    def _mesh_graph(cls, params: dict) -> mplfig.Figure:
 
         # Create arrays across x and y-axes of equally spaced points
         # from min to max values
@@ -355,7 +366,10 @@ class Graph():
 
 
     @classmethod
-    def _spline_graph(cls, params, tables):
+    def _spline_graph(
+        cls, 
+        params: dict, 
+        tables: dict) -> mplfig.Figure:
 
         # Create arrays across x and y-axes of equally spaced points
         # from min to max values
@@ -400,7 +414,10 @@ class Graph():
         return fig
 
     @classmethod
-    def _interactive_graph(cls, params, tables):
+    def _interactive_graph(
+        cls, 
+        params: dict, 
+        tables: dict) -> go.Figure:
 
         params = cls._set_contours(params=params, tables=tables)
 
@@ -469,7 +486,9 @@ class Graph():
 
 
     @staticmethod
-    def _set_contours(params, tables):
+    def _set_contours(
+        params: dict,
+        tables: dict) -> dict:
 
         # Set the range of x, y and z contours and interval
         params['contour_x_start'] = 0
@@ -503,7 +522,9 @@ class Graph():
 
 
     @staticmethod
-    def _int_scatter(params, tables):
+    def _int_scatter(
+        params: dict,
+        tables: dict) -> go.Figure:
 
         # Set z to raw data points
         params['z'] = (tables['data_3D'][str(
@@ -585,7 +606,7 @@ class Graph():
 
 
     @staticmethod
-    def _int_surf(params):
+    def _int_surf(params: dict) -> go.Figure:
 
         # Create figure object with fitted surface
         fig = go.Figure(
@@ -628,7 +649,9 @@ class Graph():
 
 
     @staticmethod
-    def _int_layout(params, fig):
+    def _int_layout(
+        params: dict,
+        fig: go.Figure) -> go.Figure:
 
         # Set initial camera angle
         params['camera'] = dict(
@@ -691,7 +714,7 @@ class Graph():
 
 
     @staticmethod
-    def _graph_format(params):
+    def _graph_format(params: dict) -> tuple[mplfig.Figure, axes.Axes]:
 
         # Update chart parameters
         plt.rcParams.update(params['mpl_3D_params'])
@@ -752,7 +775,9 @@ class Graph():
 
 
     @staticmethod
-    def _image_save(params, fig):
+    def _image_save(
+        params: dict, 
+        fig: mplfig.Figure | go.Figure) -> mplfig.Figure | go.Figure:
 
         # Create image folder if it does not already exist
         if not os.path.exists(params['image_folder']):
