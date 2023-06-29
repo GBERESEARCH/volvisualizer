@@ -20,7 +20,10 @@ class Data():
 
     """
     @classmethod
-    def create_option_data(cls, params, tables):
+    def create_option_data(
+        cls,
+        params: dict,
+        tables: dict) -> tuple[dict, dict]:
         """
         Extract the URL for each of the listed option on Yahoo Finance
         for the given ticker. Extract option data from each URL.
@@ -101,7 +104,10 @@ class Data():
 
 
     @classmethod
-    def extractoptions(cls, params, tables):
+    def extractoptions(
+        cls,
+        params: dict,
+        tables: dict) -> tuple[dict, dict]:
         """
         Extract the URL for each of the listed option on Yahoo Finance
         for the given ticker. Extract option data from each URL.
@@ -143,7 +149,7 @@ class Data():
 
 
     @staticmethod
-    def _extracturls(params):
+    def _extracturls(params: dict) -> dict:
         """
         Extract the URL for each of the listed option on Yahoo Finance
         for the given ticker.
@@ -207,7 +213,7 @@ class Data():
 
 
     @staticmethod
-    def _extract_web_data(params):
+    def _extract_web_data(params: dict) -> dict:
 
         # Create an empty dictionary
         raw_web_data = {}
@@ -234,7 +240,7 @@ class Data():
 
 
     @staticmethod
-    def _read_web_data(params):
+    def _read_web_data(params: dict) -> dict:
 
         # Create an empty dictionary
         params['option_dict'] = {}
@@ -258,7 +264,9 @@ class Data():
 
 
     @staticmethod
-    def _process_options(params, tables):
+    def _process_options(
+        params: dict,
+        tables: dict) -> tuple[dict, dict]:
 
         # Create list to store exceptions
         params['opt_except_list'] = []
@@ -322,7 +330,7 @@ class Data():
 
 
     @staticmethod
-    def trading_calendar(params):
+    def trading_calendar(params: dict) -> dict:
         """
         Generate list of trading holidays
 
