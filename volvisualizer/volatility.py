@@ -339,7 +339,11 @@ class Volatility():
             params=self.params, tables=self.tables)
 
 
-    def vol(self, maturity, strike, smoothing=None):
+    def vol(
+        self, 
+        maturity: str,
+        strike: int,
+        smoothing: bool | None = None):
         """
         Return implied vol for a given maturity and strike
 
@@ -364,7 +368,10 @@ class Volatility():
             surface_models=self.surface_models)
 
 
-    def skewreport(self, months=None, direction=None):
+    def skewreport(
+        self,
+        months: int | None = None,
+        direction: str | None = None):
         """
         Print a report showing implied vols for 80%, 90% and ATM strikes and
         selected tenor length
