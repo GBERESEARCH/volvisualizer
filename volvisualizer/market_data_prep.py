@@ -788,7 +788,7 @@ class DataPrep():
         else:
             try:
                 div_yield = cls._stock_dividend_yield(ticker)
-            except ValueError:
+            except ValueError or IndexError:
                 print("No dividend data for "+ticker)
                 div_yield = '0.0%'
 

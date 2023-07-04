@@ -1,6 +1,7 @@
 Workings
 pypi
 pypi_toml
+tests
 **/.ipynb_checkpoints
 **/__pycache__
 **/*.pyc
