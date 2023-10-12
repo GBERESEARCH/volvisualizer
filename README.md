@@ -17,9 +17,9 @@ $ pip install volvisualizer
 
 Install in a new environment using Python venv:
 
-Create base environment of Python 3.11
+Create base environment of Python 3.10
 ```
-$ py -3.11 -m venv .venv
+$ py -3.10 -m venv .venv
 ```
 Activate new environment
 ```
