@@ -17,7 +17,7 @@ $ pip install volvisualizer
 
 Install in a new environment using Python venv:
 
-Create base environment of Python 3.10
+Create base environment of Python 3.10 (later versions don't support matplotlib version 3.5.3)
 ```
 $ py -3.10 -m venv .venv
 ```
@@ -26,6 +26,10 @@ Activate new environment
 $ .venv\scripts\activate
 ```
 Ensure pip is up to date
+``` 
+$ (.venv) python -m pip install --upgrade pip
+```
+Install matplotlib version 3.5.3 (subsequent versions have deprecated some of the 3D graph functionality)
 ``` 
 $ (.venv) python -m pip install --upgrade pip
 ```
