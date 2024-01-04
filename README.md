@@ -31,7 +31,7 @@ $ (.venv) python -m pip install --upgrade pip
 ```
 Install matplotlib version 3.5.3 (subsequent versions have deprecated some of the 3D graph functionality)
 ``` 
-$ (.venv) python -m pip install --upgrade pip
+$ (.venv) python -m pip install matplotlib==3.5.3
 ```
 Install Spyder
 ```
@@ -54,7 +54,11 @@ $ activate volvis
 ```
 Install Python
 ```
-(volvis) $ conda install python==3.9
+(volvis) $ conda install python==3.10
+```
+Install matplotlib version 3.5.3 (subsequent versions have deprecated some of the 3D graph functionality)
+``` 
+$ (.venv) conda install matplotlib==3.5.3
 ```
 Install Spyder
 ```
