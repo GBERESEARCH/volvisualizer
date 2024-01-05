@@ -21,6 +21,7 @@ vol_params_dict = {
     'voltype':'last',
     'smoothopt':6,
     'notebook':False,
+    'data_output':False,
     'r':0.005,
     'q':0,
     'epsilon':0.001,
