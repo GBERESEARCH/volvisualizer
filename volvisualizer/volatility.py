@@ -180,16 +180,31 @@ class Volatility():
 
         # Run method selected by graphtype
         if self.params['graphtype'] == 'line':
+            if self.params['data_output']:
+                self.data_dict, self.params, self.tables = Graph.line_graph(
+                params=self.params, tables=self.tables)
+                return self.data_dict 
             self.params, self.tables = Graph.line_graph(
                 params=self.params, tables=self.tables)
+            return None
 
         elif self.params['graphtype'] == 'scatter':
+            if self.params['data_output']:
+                self.data_dict, self.params, self.tables = Graph.scatter_3d(
+                params=self.params, tables=self.tables)
+                return self.data_dict
             self.params, self.tables = Graph.scatter_3d(
                 params=self.params, tables=self.tables)
+            return None
 
         elif self.params['graphtype'] == 'surface':
+            if self.params['data_output']:
+                self.data_dict, self.params, self.tables = Graph.surface_3d(
+                params=self.params, tables=self.tables)
+                return self.data_dict
             self.params, self.tables = Graph.surface_3d(
                 params=self.params, tables=self.tables)
+            return None
 
         else:
             print ("Please select a graphtype from 'line', "\
@@ -396,6 +411,9 @@ class Volatility():
 
         vol_dict = VolMethods.create_vol_dict(
             params=self.params, surface_models=self.surface_models)
+
+        if self.params['data_output']:
+            return vol_dict
 
         return VolMethods.print_skew_report(
             vol_dict=vol_dict, params=self.params)
