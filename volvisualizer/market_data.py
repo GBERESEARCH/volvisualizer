@@ -4,6 +4,7 @@ Market data import and transformation functions
 """
 import copy
 from datetime import date, timedelta
+from io import StringIO
 import time
 import warnings
 import datetime as dt
@@ -250,7 +251,8 @@ class Data():
             # if data exists
             try:
                 # read html data into a DataFrame
-                option_frame = pd.read_html(params['raw_web_data'][input_date])
+                option_frame = pd.read_html(
+                    StringIO(params['raw_web_data'][input_date]))
 
                 # Add this DataFrame to the default dictionary, named
                 # with the expiry date it refers to
