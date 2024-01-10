@@ -181,7 +181,7 @@ class Volatility():
         # Run method selected by graphtype
         if self.params['graphtype'] == 'line':
             if self.params['data_output']:
-                self.data_dict, self.params, self.tables = Graph.line_graph(
+                self.data_dict = Graph.line_graph(
                 params=self.params, tables=self.tables)
                 return self.data_dict 
             self.params, self.tables = Graph.line_graph(
@@ -190,7 +190,7 @@ class Volatility():
 
         elif self.params['graphtype'] == 'scatter':
             if self.params['data_output']:
-                self.data_dict, self.params, self.tables = Graph.scatter_3d(
+                self.data_dict = Graph.scatter_3d(
                 params=self.params, tables=self.tables)
                 return self.data_dict
             self.params, self.tables = Graph.scatter_3d(
@@ -199,7 +199,7 @@ class Volatility():
 
         elif self.params['graphtype'] == 'surface':
             if self.params['data_output']:
-                self.data_dict, self.params, self.tables = Graph.surface_3d(
+                self.data_dict = Graph.surface_3d(
                 params=self.params, tables=self.tables)
                 return self.data_dict
             self.params, self.tables = Graph.surface_3d(
@@ -413,7 +413,11 @@ class Volatility():
             params=self.params, surface_models=self.surface_models)
 
         if self.params['data_output']:
-            return vol_dict
+            data_dict = {
+                'vol_dict': vol_dict,
+                'params': self.params
+            }
+            return data_dict
 
         return VolMethods.print_skew_report(
             vol_dict=vol_dict, params=self.params)
