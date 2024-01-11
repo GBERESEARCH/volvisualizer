@@ -49,7 +49,6 @@ class Graph():
         Linegraph.
 
         """
-
         # Create a sorted list of the different number of option
         # expiries
         dates = sorted(list(set(tables['imp_vol_data']['Expiry'])))
@@ -75,8 +74,16 @@ class Graph():
         # Set fontsize of axis ticks
         ax.tick_params(axis='both', which='major', labelsize=ax_font_scale)
 
+        opt_dict = {}
         # For each expiry date
         for exp_date, tenor in tenor_date_dict.items():
+            opt_dict[str(exp_date)] = {}
+            opt_dict[str(exp_date)]['strikes'] = np.array(tables['imp_vol_data'][
+                tables['imp_vol_data']['TTM']==tenor]['Strike'])
+            opt_dict[str(exp_date)]['vols'] = np.array(tables['imp_vol_data'][
+                tables['imp_vol_data']['TTM']==tenor][str(
+                    params['vols_dict'][str(params['voltype'])])] * 100)
+            opt_dict[str(exp_date)]['label'] = str(exp_date)+' Expiry'
 
             # Plot the specified voltype against strike
             ax.plot(
@@ -87,25 +94,35 @@ class Graph():
                         params['vols_dict'][str(params['voltype'])])] * 100),
                 label=str(exp_date)+' Expiry')
 
-        plt.grid(True)
 
-        # Label axes
-        ax.set_xlabel('Strike', fontsize=ax_font_scale)
-        ax.set_ylabel('Implied Volatility %', fontsize=ax_font_scale)
+        opt_dict['x_label'] = 'Strike'
+        opt_dict['y_label'] = 'Implied Volatility %'
+        opt_dict['legend_title'] = 'Option Expiry'
 
-        # Set legend title and font sizes
-        ax.legend(title="Option Expiry",
-                  fontsize=ax_font_scale*0.6,
-                  title_fontsize=ax_font_scale*0.8)
-
-        # Specify title with ticker label, voltype and date and shift
-        # away from chart
-        st = fig.suptitle(
+        opt_dict['title'] = (
             str(params['ticker_label'])
             +' Implied Volatility '
             +str(params['voltype'].title())
             +' Price '
-            +str(params['start_date']),
+            +str(params['start_date'])
+            )
+
+        plt.grid(True)
+
+        # Label axes
+        ax.set_xlabel(opt_dict['x_label'], fontsize=ax_font_scale)
+        ax.set_ylabel(opt_dict['y_label'], fontsize=ax_font_scale)
+
+        # Set legend title and font sizes
+        ax.legend(title=opt_dict['legend_title'],
+                fontsize=ax_font_scale*0.6,
+                title_fontsize=ax_font_scale*0.8)
+
+        # Specify title with ticker label, voltype and date and shift
+        # away from chart
+
+        st = fig.suptitle(
+            opt_dict['title'],
             fontsize=title_font_scale,
             fontweight=0,
             color='black',
@@ -120,6 +137,13 @@ class Graph():
         if params['save_image']:
             # save the image as a png file
             fig = cls._image_save(params=params, fig=fig)
+
+        if params['data_output']:
+            data_dict = {
+                'params': params,
+                'tables': tables,
+                'opt_dict': opt_dict
+            }
 
         return params, tables
 
