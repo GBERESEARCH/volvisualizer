@@ -26,7 +26,7 @@ class Graph():
     def line_graph(
         cls,
         params: dict,
-        tables: dict) -> tuple[dict, dict]:
+        tables: dict) -> dict | tuple[dict, dict]:
         """
         Displays a linegraph of each option maturity plotted by strike
         and implied vol
@@ -145,6 +145,8 @@ class Graph():
                 'opt_dict': opt_dict
             }
 
+            return data_dict
+
         return params, tables
 
 
@@ -152,7 +154,7 @@ class Graph():
     def scatter_3d(
         cls,
         params: dict,
-        tables: dict) -> tuple[dict, dict]:
+        tables: dict) -> dict | tuple[dict, dict]:
         """
         Displays a 3D scatter plot of each option implied vol against
         strike and maturity
@@ -181,9 +183,11 @@ class Graph():
         3D Scatter plot.
 
         """
+        # Create dictionary to store option data
+        opt_dict = {}
 
         # Create figure and axis objects and format
-        fig, ax = cls._graph_format(params=params)
+        fig, ax, opt_dict = cls._graph_format(params=params, opt_dict=opt_dict)
 
         # Create copy of data
         tables['data_3D'] = copy.deepcopy(tables['imp_vol_data'])
@@ -193,19 +197,28 @@ class Graph():
             params['prices_dict'][str(params['voltype'])])] != 0]
 
         # Specify the 3 axis values
-        x = tables['data_3D']['Strike']
-        y = tables['data_3D']['TTM'] * 365
-        z = tables['data_3D'][str(params['vols_dict'][str(
-            params['voltype'])])] * 100
+        opt_dict['strikes'] = np.array(tables['data_3D']['Strike'])
+        opt_dict['ttms'] = np.array(tables['data_3D']['TTM'] * 365)
+        opt_dict['vols'] = np.array(tables['data_3D'][str(params['vols_dict'][str(
+            params['voltype'])])] * 100)
 
         # Display scatter, specifying colour to vary with z-axis and use
         # colormap 'viridis'
-        ax.scatter3D(x, y, z, c=z, cmap='viridis')
+        ax.scatter3D(opt_dict['strikes'], opt_dict['ttms'], opt_dict['vols'], c=opt_dict['vols'], cmap='viridis')
 
         if params['save_image']:
             # save the image as a png file
             fig = cls._image_save(params=params, fig=fig)
 
+        if params['data_output']:
+            data_dict = {
+                'params': params,
+                'tables': tables,
+                'opt_dict': opt_dict
+            }
+
+            return data_dict
+                  
         return params, tables
 
 
@@ -748,7 +761,7 @@ class Graph():
 
 
     @staticmethod
-    def _graph_format(params: dict) -> tuple[mplfig.Figure, axes.Axes]:
+    def _graph_format(params: dict, opt_dict: dict) -> tuple[mplfig.Figure, axes.Axes, dict]:
 
         # Update chart parameters
         plt.rcParams.update(params['mpl_3D_params'])
@@ -782,30 +795,38 @@ class Graph():
         # Set fontsize of axis ticks
         ax.tick_params(axis='both', which='major', labelsize=ax_font_scale)
 
+        # Add labels to option dictionary  
+        opt_dict['x_label'] = 'Strike'
+        opt_dict['y_label'] = 'Time to Expiration (Days)'
+        opt_dict['z_label'] = 'Implied Volatility %'
+        opt_dict['title'] = (
+            str(params['ticker_label'])
+            +' Implied Volatility '
+            +str(params['voltype'].title())
+            +' Price '
+            +str(params['start_date'])
+            )
+
         # Label axes
-        ax.set_xlabel('Strike', fontsize=ax_font_scale,
-                      labelpad=ax_font_scale*1.2)
-        ax.set_ylabel('Time to Expiration (Days)', fontsize=ax_font_scale,
-                      labelpad=ax_font_scale*1.2)
-        ax.set_zlabel('Implied Volatility %', fontsize=ax_font_scale,
-                      labelpad=ax_font_scale*1.2)
+        ax.set_xlabel(opt_dict['x_label'], fontsize=ax_font_scale,
+                    labelpad=ax_font_scale*1.2)
+        ax.set_ylabel(opt_dict['y_label'], fontsize=ax_font_scale,
+                    labelpad=ax_font_scale*1.2)
+        ax.set_zlabel(opt_dict['z_label'], fontsize=ax_font_scale,
+                    labelpad=ax_font_scale*1.2)
 
         # Specify title with ticker label, voltype and date
-        st = fig.suptitle(str(params['ticker_label'])
-                          +' Implied Volatility '
-                          +str(params['voltype'].title())
-                          +' Price '
-                          +str(params['start_date']),
-                          fontsize=title_font_scale,
-                          fontweight=0,
-                          color='black',
-                          style='italic',
-                          y=1.02)
+        st = fig.suptitle(opt_dict['title'],
+                        fontsize=title_font_scale,
+                        fontweight=0,
+                        color='black',
+                        style='italic',
+                        y=1.02)
 
         st.set_y(0.95)
         fig.subplots_adjust(top=1)
 
-        return fig, ax
+        return fig, ax, opt_dict
 
 
     @staticmethod
