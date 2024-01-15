@@ -291,6 +291,8 @@ class Graph():
             "ignore", category=UserWarning, message='Z contains NaN values. '\
                 'This may result in rendering artifacts.')
 
+        opt_dict = {}
+
         # If smoothing is set to False
         if params['smoothing'] is False:
 
