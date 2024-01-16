@@ -355,10 +355,13 @@ class Graph():
 
 
     @classmethod
-    def _trisurf_graph(cls, params: dict) -> mplfig.Figure:
+    def _trisurf_graph(
+        cls,               
+        params: dict, 
+        opt_dict: dict) -> tuple[mplfig.Figure, dict]:
 
         # Create figure and axis objects and format
-        fig, ax = cls._graph_format(params=params)
+        fig, ax, opt_dict = cls._graph_format(params=params, opt_dict=opt_dict)
 
         # Display triangular surface plot, using colormap 'viridis'
         ax.plot_trisurf(params['x'],
@@ -367,7 +370,7 @@ class Graph():
                         cmap='viridis',
                         edgecolor='none')
 
-        return fig
+        return fig, opt_dict
 
 
     @classmethod
