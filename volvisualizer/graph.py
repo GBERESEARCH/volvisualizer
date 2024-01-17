@@ -374,7 +374,10 @@ class Graph():
 
 
     @classmethod
-    def _mesh_graph(cls, params: dict) -> mplfig.Figure:
+    def _mesh_graph(
+        cls, 
+        params: dict, 
+        opt_dict: dict) ->  tuple[mplfig.Figure, dict]:
 
         # Create arrays across x and y-axes of equally spaced points
         # from min to max values
@@ -394,7 +397,7 @@ class Graph():
                       method='cubic')
 
         # Create figure and axis objects and format
-        fig, ax = cls._graph_format(params=params)
+        fig, ax, opt_dict = cls._graph_format(params=params, opt_dict=opt_dict)
 
         # Plot the surface
         ax.plot_surface(x1, y1, z1)
@@ -402,9 +405,13 @@ class Graph():
         # Apply contour lines
         ax.contour(x1, y1, z1)
 
+        opt_dict['x1'] = x1
+        opt_dict['y1'] = y1
+        opt_dict['z1'] = z1
+
         plt.show()
 
-        return fig
+        return fig, opt_dict
 
 
     @classmethod
