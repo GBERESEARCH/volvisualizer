@@ -405,9 +405,9 @@ class Graph():
         # Apply contour lines
         ax.contour(x1, y1, z1)
 
-        opt_dict['x1'] = x1
-        opt_dict['y1'] = y1
-        opt_dict['z1'] = z1
+        opt_dict['strikes_array'] = x1
+        opt_dict['ttms_array'] = y1
+        opt_dict['vol_surface'] = z1
 
         plt.show()
 
