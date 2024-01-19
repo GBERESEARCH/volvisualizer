@@ -152,6 +152,9 @@ class DataPrep():
         # Create Days to Maturity column
         tables['data']['Days'] = np.round(tables['data']['TTM']*365, 0)
 
+        # Remove Zero Maturities
+        tables['data'] = tables['data'][tables['data']['TTM'] !=0] 
+
         params, tables = cls._filters(params=params, tables=tables)
 
         return params, tables
