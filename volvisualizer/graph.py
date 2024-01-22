@@ -418,7 +418,8 @@ class Graph():
     def _spline_graph(
         cls,
         params: dict,
-        tables: dict) -> mplfig.Figure:
+        tables: dict,
+        opt_dict: dict) -> tuple[mplfig.Figure, dict]:
 
         # Create arrays across x and y-axes of equally spaced points
         # from min to max values
@@ -447,7 +448,7 @@ class Graph():
         z2 = spline(x2, y2)
 
         # Create figure and axis objects and format
-        fig, ax = cls._graph_format(params=params)
+        fig, ax, opt_dict = cls._graph_format(params=params, opt_dict=opt_dict)
 
         # Plot the surface
         ax.plot_wireframe(x2, y2, z2)
@@ -460,7 +461,13 @@ class Graph():
                 params['vols_dict'][str(params['voltype'])])] * 100
             ax.scatter3D(params['x'], params['y'], params['z'], c='r')
 
-        return fig
+        opt_dict['strikes_linspace'] = x1
+        opt_dict['ttms_linspace'] = y1
+        opt_dict['strikes_linspace_array'] = x2
+        opt_dict['ttms_linspace_array'] = y2
+        opt_dict['vol_surface'] = z2
+
+        return fig, opt_dict
 
     @classmethod
     def _interactive_graph(
