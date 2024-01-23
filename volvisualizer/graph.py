@@ -707,7 +707,8 @@ class Graph():
     @staticmethod
     def _int_layout(
         params: dict,
-        fig: go.Figure) -> go.Figure:
+        fig: go.Figure,
+        opt_dict: dict) -> tuple[go.Figure,dict]:
 
         # Set initial camera angle
         params['camera'] = {
@@ -717,6 +718,18 @@ class Graph():
                 'z':1
                 }
             }
+        
+        xaxis_title = 'Time to Expiration (Days)'
+        yaxis_title = 'Strike'
+        zaxis_title = 'Implied Volatility %'
+
+        title = (
+            str(params['ticker_label'])
+            +' Implied Volatility '
+            +str(params['voltype'].title())
+            +' Price '
+            +str(params['start_date'])
+            )
 
         # Set Time To Expiration to increase left to right
         fig.update_scenes(xaxis_autorange="reversed")
@@ -742,20 +755,14 @@ class Graph():
                     },
                 'aspectmode': 'cube',
                 # Label axes
-                'xaxis_title': 'Time to Expiration (Days)',
-                'yaxis_title': 'Strike',
-                'zaxis_title': 'Implied Volatility %'
+                'xaxis_title': xaxis_title,
+                'yaxis_title': yaxis_title,
+                'zaxis_title': zaxis_title
                 },
             # Specify title with ticker label, voltype
             # and date
             title={
-                'text':(
-                    str(params['ticker_label'])
-                    +' Implied Volatility '
-                    +str(params['voltype'].title())
-                    +' Price '
-                    +str(params['start_date'])
-                    ),
+                'text': title,
                 'y':0.9,
                 'x':0.5,
                 'xanchor':'center',
@@ -775,12 +782,19 @@ class Graph():
                 't':90
                 },
             scene_camera=params['camera'])
+        
+        opt_dict['title'] = title
+        opt_dict['xaxis_title'] = xaxis_title
+        opt_dict['yaxis_title'] = yaxis_title
+        opt_dict['zaxis_title'] = zaxis_title
 
-        return fig
+        return fig, opt_dict
 
 
     @staticmethod
-    def _graph_format(params: dict, opt_dict: dict) -> tuple[mplfig.Figure, axes.Axes, dict]:
+    def _graph_format(
+        params: dict, 
+        opt_dict: dict) -> tuple[mplfig.Figure, axes.Axes, dict]:
 
         # Update chart parameters
         plt.rcParams.update(params['mpl_3D_params'])
