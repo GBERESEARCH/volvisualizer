@@ -473,7 +473,8 @@ class Graph():
     def _interactive_graph(
         cls,
         params: dict,
-        tables: dict) -> go.Figure:
+        tables: dict,
+        opt_dict: dict) -> tuple[go.Figure, dict]:
 
         params = cls._set_contours(params=params, tables=tables)
 
@@ -528,7 +529,20 @@ class Graph():
             fig = cls._int_surf(params=params)
 
         # Format the chart layout
-        fig = cls._int_layout(params=params, fig=fig)
+        fig, opt_dict = cls._int_layout(
+            params=params, 
+            fig=fig, 
+            opt_dict=opt_dict
+            )
+        
+        opt_dict['strikes'] = np.array(tables['data_3D']['Strike'])
+        opt_dict['ttms'] = np.array(tables['data_3D']['TTM'] * 365)
+        opt_dict['vols'] = np.array(tables['data_3D']['Graph Vol'] * 100)
+        opt_dict['ttms_linspace'] = x1
+        opt_dict['strikes_linspace'] = y1
+        opt_dict['ttms_linspace_array'] = params['x2']
+        opt_dict['strikes_linspace_array'] = params['y2']
+        opt_dict['vol_surface'] = params['z2']
 
         # If running within a Jupyter notebook, plot graph inline
         if params['notebook'] is True:
@@ -538,7 +552,7 @@ class Graph():
         else:
             plot(fig, auto_open=True)
 
-        return fig
+        return fig, opt_dict
 
 
     @staticmethod
