@@ -75,15 +75,20 @@ class Graph():
         ax.tick_params(axis='both', which='major', labelsize=ax_font_scale)
 
         opt_dict = {}
+        opt_dict['tenors'] = []
         # For each expiry date
         for exp_date, tenor in tenor_date_dict.items():
-            opt_dict[str(exp_date)] = {}
-            opt_dict[str(exp_date)]['strikes'] = np.array(tables['imp_vol_data'][
+            # Create a dictionary of strikes, vols & label 
+            data = {}
+            data['strikes'] = np.array(tables['imp_vol_data'][
                 tables['imp_vol_data']['TTM']==tenor]['Strike'])
-            opt_dict[str(exp_date)]['vols'] = np.array(tables['imp_vol_data'][
+            data['vols'] = np.array(tables['imp_vol_data'][
                 tables['imp_vol_data']['TTM']==tenor][str(
                     params['vols_dict'][str(params['voltype'])])] * 100)
-            opt_dict[str(exp_date)]['label'] = str(exp_date)+' Expiry'
+            data['label'] = str(exp_date)+' Expiry'
+
+            # Append this to the array of tenors
+            opt_dict['tenors'].append(data)
 
             # Plot the specified voltype against strike
             ax.plot(
@@ -144,7 +149,6 @@ class Graph():
                 'tables': tables,
                 'opt_dict': opt_dict
             }
-
             return data_dict
 
         return params, tables
@@ -216,7 +220,6 @@ class Graph():
                 'tables': tables,
                 'opt_dict': opt_dict
             }
-
             return data_dict
                   
         return params, tables
@@ -226,7 +229,7 @@ class Graph():
     def surface_3d(
         cls,
         params: dict,
-        tables: dict) -> tuple[dict, dict]:
+        tables: dict) -> dict | tuple[dict, dict]:
         """
         Displays a 3D surface plot of the implied vol surface against
         strike and maturity
@@ -328,17 +331,17 @@ class Graph():
         params['z'] = tables['data_3D']['Graph Vol'] * 100
 
         if params['surfacetype'] == 'trisurf':
-            fig = cls._trisurf_graph(params=params)
+            fig, opt_dict = cls._trisurf_graph(params=params, opt_dict=opt_dict)
 
         elif params['surfacetype'] == 'mesh':
-            fig = cls._mesh_graph(params=params)
+            fig, opt_dict = cls._mesh_graph(params=params, opt_dict=opt_dict)
 
         elif params['surfacetype'] == 'spline':
-            fig = cls._spline_graph(params=params, tables=tables)
+            fig, opt_dict = cls._spline_graph(params=params, tables=tables, opt_dict=opt_dict)
 
         elif params['surfacetype'] in ['interactive_mesh',
                                        'interactive_spline']:
-            fig = cls._interactive_graph(params=params, tables=tables)
+            fig, opt_dict = cls._interactive_graph(params=params, tables=tables, opt_dict=opt_dict)
 
         else:
             print("Enter a valid surfacetype from 'trisurf', 'mesh', "\
@@ -350,6 +353,14 @@ class Graph():
 
         # Set warnings back to default
         warnings.filterwarnings("default", category=UserWarning)
+
+        if params['data_output']:
+            data_dict = {
+                'params': params,
+                'tables': tables,
+                'opt_dict': opt_dict
+            }
+            return data_dict
 
         return params, tables
 
