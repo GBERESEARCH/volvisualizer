@@ -192,7 +192,6 @@ class Graph():
             opt_dict=opt_dict, 
             output='mpl'
             )
-        fig, ax = cls._graph_format(params=params, opt_dict=opt_dict)
 
         # Create copy of data
         tables['data_3D'] = copy.deepcopy(tables['imp_vol_data'])
@@ -210,6 +209,8 @@ class Graph():
         # Display scatter, specifying colour to vary with z-axis and use
         # colormap 'viridis'
         if params['show_graph']:
+            fig, ax = cls._graph_format(params=params, opt_dict=opt_dict)
+            
             ax.scatter3D(opt_dict['strikes'], opt_dict['ttms'], opt_dict['vols'], c=opt_dict['vols'], cmap='viridis')
 
         if params['save_image']:
