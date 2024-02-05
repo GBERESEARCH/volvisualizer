@@ -137,7 +137,8 @@ class Graph():
         fig.subplots_adjust(top=0.9)
 
         # Display graph
-        plt.show()
+        if params['show_graph']:
+            plt.show()
 
         if params['save_image']:
             # save the image as a png file
@@ -208,7 +209,8 @@ class Graph():
 
         # Display scatter, specifying colour to vary with z-axis and use
         # colormap 'viridis'
-        ax.scatter3D(opt_dict['strikes'], opt_dict['ttms'], opt_dict['vols'], c=opt_dict['vols'], cmap='viridis')
+        if params['show_graph']:
+            ax.scatter3D(opt_dict['strikes'], opt_dict['ttms'], opt_dict['vols'], c=opt_dict['vols'], cmap='viridis')
 
         if params['save_image']:
             # save the image as a png file
@@ -375,11 +377,12 @@ class Graph():
         fig, ax, opt_dict = cls._graph_format(params=params, opt_dict=opt_dict)
 
         # Display triangular surface plot, using colormap 'viridis'
-        ax.plot_trisurf(params['x'],
-                        params['y'],
-                        params['z'],
-                        cmap='viridis',
-                        edgecolor='none')
+        if params['show_graph']:
+            ax.plot_trisurf(params['x'],
+                            params['y'],
+                            params['z'],
+                            cmap='viridis',
+                            edgecolor='none')
 
         return fig, opt_dict
 
@@ -410,17 +413,18 @@ class Graph():
         # Create figure and axis objects and format
         fig, ax, opt_dict = cls._graph_format(params=params, opt_dict=opt_dict)
 
-        # Plot the surface
-        ax.plot_surface(x1, y1, z1)
-
-        # Apply contour lines
-        ax.contour(x1, y1, z1)
-
         opt_dict['strikes_array'] = x1
         opt_dict['ttms_array'] = y1
         opt_dict['vol_surface'] = z1
 
-        plt.show()
+        # Plot the surface
+        if params['show_graph']:
+            ax.plot_surface(x1, y1, z1)
+
+            # Apply contour lines
+            ax.contour(x1, y1, z1)
+
+            plt.show()
 
         return fig, opt_dict
 
@@ -461,24 +465,26 @@ class Graph():
         # Create figure and axis objects and format
         fig, ax, opt_dict = cls._graph_format(params=params, opt_dict=opt_dict)
 
-        # Plot the surface
-        ax.plot_wireframe(x2, y2, z2)
-        ax.plot_surface(x2, y2, z2, alpha=0.2)
-
-        # If scatter is True, overlay the surface with the
-        # unsmoothed scatter points
-        if params['scatter']:
-            params['z'] = tables['data_3D'][str(
-                params['vols_dict'][str(params['voltype'])])] * 100
-            ax.scatter3D(params['x'], params['y'], params['z'], c='r')
-
         opt_dict['strikes_linspace'] = x1
         opt_dict['ttms_linspace'] = y1
         opt_dict['strikes_linspace_array'] = x2
         opt_dict['ttms_linspace_array'] = y2
         opt_dict['vol_surface'] = z2
 
+        # Plot the surface
+        if params['show_graph']:
+            ax.plot_wireframe(x2, y2, z2)
+            ax.plot_surface(x2, y2, z2, alpha=0.2)
+
+            # If scatter is True, overlay the surface with the
+            # unsmoothed scatter points
+            if params['scatter']:
+                params['z'] = tables['data_3D'][str(
+                    params['vols_dict'][str(params['voltype'])])] * 100
+                ax.scatter3D(params['x'], params['y'], params['z'], c='r')
+
         return fig, opt_dict
+
 
     @classmethod
     def _interactive_graph(
@@ -555,13 +561,14 @@ class Graph():
         opt_dict['strikes_linspace_array'] = params['y2']
         opt_dict['vol_surface'] = params['z2']
 
-        # If running within a Jupyter notebook, plot graph inline
-        if params['notebook'] is True:
-            fig.show()
+        if params['show_graph']:
+            # If running within a Jupyter notebook, plot graph inline
+            if params['notebook'] is True:
+                fig.show()
 
-        # Otherwise create a new HTML window to display
-        else:
-            plot(fig, auto_open=True)
+            # Otherwise create a new HTML window to display
+            else:
+                plot(fig, auto_open=True)
 
         return fig, opt_dict
 
