@@ -184,6 +184,7 @@ class Volatility():
                 self.data_dict = Graph.line_graph(
                 params=self.params, tables=self.tables)
                 return self.data_dict 
+            
             self.params, self.tables = Graph.line_graph(
                 params=self.params, tables=self.tables)
             return None
@@ -193,6 +194,7 @@ class Volatility():
                 self.data_dict = Graph.scatter_3d(
                 params=self.params, tables=self.tables)
                 return self.data_dict
+            
             self.params, self.tables = Graph.scatter_3d(
                 params=self.params, tables=self.tables)
             return None
@@ -202,6 +204,7 @@ class Volatility():
                 self.data_dict = Graph.surface_3d(
                 params=self.params, tables=self.tables)
                 return self.data_dict
+            
             self.params, self.tables = Graph.surface_3d(
                 params=self.params, tables=self.tables)
             return None
