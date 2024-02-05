@@ -22,6 +22,7 @@ vol_params_dict = {
     'smoothopt':6,
     'notebook':False,
     'data_output':False,
+    'show_graph':True,
     'r':0.005,
     'q':0,
     'epsilon':0.001,
