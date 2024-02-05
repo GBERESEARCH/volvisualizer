@@ -60,19 +60,20 @@ class Graph():
         # Combine these in a dictionary
         tenor_date_dict = dict(zip(dates, tenors))
 
-        plt.style.use('seaborn-darkgrid')
-        plt.rcParams.update(params['mpl_line_params'])
-        fig_size = (12, 9)
+        if params['show_graph']:
+            plt.style.use('seaborn-darkgrid')
+            plt.rcParams.update(params['mpl_line_params'])
+            fig_size = (12, 9)
 
-        # Create figure, axis objects
-        fig, ax = plt.subplots(figsize=fig_size)
+            # Create figure, axis objects
+            fig, ax = plt.subplots(figsize=fig_size)
 
-        # Create values that scale fonts with fig_size
-        ax_font_scale = int(round(fig_size[0] * 1.5))
-        title_font_scale = int(round(fig_size[0] * 2))
+            # Create values that scale fonts with fig_size
+            ax_font_scale = int(round(fig_size[0] * 1.5))
+            title_font_scale = int(round(fig_size[0] * 2))
 
-        # Set fontsize of axis ticks
-        ax.tick_params(axis='both', which='major', labelsize=ax_font_scale)
+            # Set fontsize of axis ticks
+            ax.tick_params(axis='both', which='major', labelsize=ax_font_scale)
 
         opt_dict = {}
         opt_dict['tenors'] = []
@@ -91,53 +92,47 @@ class Graph():
             opt_dict['tenors'].append(data)
 
             # Plot the specified voltype against strike
-            ax.plot(
-                np.array(tables['imp_vol_data'][
-                    tables['imp_vol_data']['TTM']==tenor]['Strike']),
-                np.array(tables['imp_vol_data'][
-                    tables['imp_vol_data']['TTM']==tenor][str(
-                        params['vols_dict'][str(params['voltype'])])] * 100),
-                label=str(exp_date)+' Expiry')
+            if params['show_graph']:
+                ax.plot(
+                    np.array(tables['imp_vol_data'][
+                        tables['imp_vol_data']['TTM']==tenor]['Strike']),
+                    np.array(tables['imp_vol_data'][
+                        tables['imp_vol_data']['TTM']==tenor][str(
+                            params['vols_dict'][str(params['voltype'])])] * 100),
+                    label=str(exp_date)+' Expiry')
 
-
-        opt_dict['x_label'] = 'Strike'
-        opt_dict['y_label'] = 'Implied Volatility %'
-        opt_dict['legend_title'] = 'Option Expiry'
-
-        opt_dict['title'] = (
-            str(params['ticker_label'])
-            +' Implied Volatility '
-            +str(params['voltype'].title())
-            +' Price '
-            +str(params['start_date'])
+        opt_dict = cls._create_opt_labels(
+            params=params, 
+            opt_dict=opt_dict, 
+            output='line'
             )
-
-        plt.grid(True)
-
-        # Label axes
-        ax.set_xlabel(opt_dict['x_label'], fontsize=ax_font_scale)
-        ax.set_ylabel(opt_dict['y_label'], fontsize=ax_font_scale)
-
-        # Set legend title and font sizes
-        ax.legend(title=opt_dict['legend_title'],
-                fontsize=ax_font_scale*0.6,
-                title_fontsize=ax_font_scale*0.8)
-
-        # Specify title with ticker label, voltype and date and shift
-        # away from chart
-
-        st = fig.suptitle(
-            opt_dict['title'],
-            fontsize=title_font_scale,
-            fontweight=0,
-            color='black',
-            style='italic',
-            y=1.02)
-        st.set_y(0.95)
-        fig.subplots_adjust(top=0.9)
-
-        # Display graph
+        
         if params['show_graph']:
+            plt.grid(True)
+
+            # Label axes
+            ax.set_xlabel(opt_dict['x_label'], fontsize=ax_font_scale)
+            ax.set_ylabel(opt_dict['y_label'], fontsize=ax_font_scale)
+
+            # Set legend title and font sizes
+            ax.legend(title=opt_dict['legend_title'],
+                    fontsize=ax_font_scale*0.6,
+                    title_fontsize=ax_font_scale*0.8)
+
+            # Specify title with ticker label, voltype and date and shift
+            # away from chart
+
+            st = fig.suptitle(
+                opt_dict['title'],
+                fontsize=title_font_scale,
+                fontweight=0,
+                color='black',
+                style='italic',
+                y=1.02)
+            st.set_y(0.95)
+            fig.subplots_adjust(top=0.9)
+
+            # Display graph
             plt.show()
 
         if params['save_image']:
@@ -192,7 +187,12 @@ class Graph():
         opt_dict = {}
 
         # Create figure and axis objects and format
-        fig, ax, opt_dict = cls._graph_format(params=params, opt_dict=opt_dict)
+        opt_dict = cls._create_opt_labels(
+            params=params, 
+            opt_dict=opt_dict, 
+            output='mpl'
+            )
+        fig, ax = cls._graph_format(params=params, opt_dict=opt_dict)
 
         # Create copy of data
         tables['data_3D'] = copy.deepcopy(tables['imp_vol_data'])
@@ -332,26 +332,46 @@ class Graph():
         params['y'] = tables['data_3D']['TTM'] * 365
         params['z'] = tables['data_3D']['Graph Vol'] * 100
 
-        if params['surfacetype'] == 'trisurf':
-            fig, opt_dict = cls._trisurf_graph(params=params, opt_dict=opt_dict)
+        if params['show_graph']:
+            if params['surfacetype'] == 'trisurf':
+                fig, opt_dict = cls._trisurf_graph(params=params, opt_dict=opt_dict)
 
-        elif params['surfacetype'] == 'mesh':
-            fig, opt_dict = cls._mesh_graph(params=params, opt_dict=opt_dict)
+            elif params['surfacetype'] == 'mesh':
+                fig, opt_dict = cls._mesh_graph(params=params, opt_dict=opt_dict)
 
-        elif params['surfacetype'] == 'spline':
-            fig, opt_dict = cls._spline_graph(params=params, tables=tables, opt_dict=opt_dict)
+            elif params['surfacetype'] == 'spline':
+                fig, opt_dict = cls._spline_graph(params=params, tables=tables, opt_dict=opt_dict)
 
-        elif params['surfacetype'] in ['interactive_mesh',
-                                       'interactive_spline']:
-            fig, opt_dict = cls._interactive_graph(params=params, tables=tables, opt_dict=opt_dict)
+            elif params['surfacetype'] in ['interactive_mesh',
+                                        'interactive_spline']:
+                fig, opt_dict = cls._interactive_graph(params=params, tables=tables, opt_dict=opt_dict)
+
+            else:
+                print("Enter a valid surfacetype from 'trisurf', 'mesh', "\
+                    "'spline', 'interactive_mesh', 'interactive_spline'")
+
+            if params['save_image']:
+                # save the image as a png file
+                fig = cls._image_save(params=params, fig=fig)
 
         else:
-            print("Enter a valid surfacetype from 'trisurf', 'mesh', "\
-                  "'spline', 'interactive_mesh', 'interactive_spline'")
+            if params['surfacetype'] == 'trisurf':
+                opt_dict = cls._trisurf_graph(params=params, opt_dict=opt_dict)
 
-        if params['save_image']:
-            # save the image as a png file
-            fig = cls._image_save(params=params, fig=fig)
+            elif params['surfacetype'] == 'mesh':
+                opt_dict = cls._mesh_graph(params=params, opt_dict=opt_dict)
+
+            elif params['surfacetype'] == 'spline':
+                opt_dict = cls._spline_graph(params=params, tables=tables, opt_dict=opt_dict)
+
+            elif params['surfacetype'] in [
+                'interactive_mesh', 
+                'interactive_spline']:
+                opt_dict = cls._interactive_graph(params=params, tables=tables, opt_dict=opt_dict)
+
+            else:
+                print("Enter a valid surfacetype from 'trisurf', 'mesh', "\
+                    "'spline', 'interactive_mesh', 'interactive_spline'")
 
         # Set warnings back to default
         warnings.filterwarnings("default", category=UserWarning)
@@ -371,27 +391,35 @@ class Graph():
     def _trisurf_graph(
         cls,               
         params: dict, 
-        opt_dict: dict) -> tuple[mplfig.Figure, dict]:
+        opt_dict: dict) -> tuple[mplfig.Figure, dict] | dict:
 
         # Create figure and axis objects and format
-        fig, ax, opt_dict = cls._graph_format(params=params, opt_dict=opt_dict)
-
-        # Display triangular surface plot, using colormap 'viridis'
+        opt_dict = cls._create_opt_labels(
+            params=params, 
+            opt_dict=opt_dict, 
+            output='mpl'
+            )
+        
         if params['show_graph']:
+            fig, ax = cls._graph_format(params=params, opt_dict=opt_dict)
+
+            # Display triangular surface plot, using colormap 'viridis'
             ax.plot_trisurf(params['x'],
                             params['y'],
                             params['z'],
                             cmap='viridis',
                             edgecolor='none')
 
-        return fig, opt_dict
+            return fig, opt_dict
 
+        return opt_dict
+    
 
     @classmethod
     def _mesh_graph(
         cls, 
         params: dict, 
-        opt_dict: dict) ->  tuple[mplfig.Figure, dict]:
+        opt_dict: dict) ->  tuple[mplfig.Figure, dict] | dict:
 
         # Create arrays across x and y-axes of equally spaced points
         # from min to max values
@@ -411,7 +439,11 @@ class Graph():
                       method='cubic')
 
         # Create figure and axis objects and format
-        fig, ax, opt_dict = cls._graph_format(params=params, opt_dict=opt_dict)
+        opt_dict = cls._create_opt_labels(
+            params=params, 
+            opt_dict=opt_dict, 
+            output='mpl'
+            )
 
         opt_dict['strikes_array'] = x1
         opt_dict['ttms_array'] = y1
@@ -419,6 +451,7 @@ class Graph():
 
         # Plot the surface
         if params['show_graph']:
+            fig, ax = cls._graph_format(params=params, opt_dict=opt_dict)
             ax.plot_surface(x1, y1, z1)
 
             # Apply contour lines
@@ -426,15 +459,16 @@ class Graph():
 
             plt.show()
 
-        return fig, opt_dict
+            return fig, opt_dict
 
+        return opt_dict
 
     @classmethod
     def _spline_graph(
         cls,
         params: dict,
         tables: dict,
-        opt_dict: dict) -> tuple[mplfig.Figure, dict]:
+        opt_dict: dict) -> tuple[mplfig.Figure, dict] | dict:
 
         # Create arrays across x and y-axes of equally spaced points
         # from min to max values
@@ -463,7 +497,11 @@ class Graph():
         z2 = spline(x2, y2)
 
         # Create figure and axis objects and format
-        fig, ax, opt_dict = cls._graph_format(params=params, opt_dict=opt_dict)
+        opt_dict = cls._create_opt_labels(
+            params=params, 
+            opt_dict=opt_dict, 
+            output='mpl'
+            )    
 
         opt_dict['strikes_linspace'] = x1
         opt_dict['ttms_linspace'] = y1
@@ -473,6 +511,7 @@ class Graph():
 
         # Plot the surface
         if params['show_graph']:
+            fig, ax = cls._graph_format(params=params, opt_dict=opt_dict)
             ax.plot_wireframe(x2, y2, z2)
             ax.plot_surface(x2, y2, z2, alpha=0.2)
 
@@ -483,7 +522,9 @@ class Graph():
                     params['vols_dict'][str(params['voltype'])])] * 100
                 ax.scatter3D(params['x'], params['y'], params['z'], c='r')
 
-        return fig, opt_dict
+            return fig, opt_dict
+        
+        return opt_dict
 
 
     @classmethod
@@ -491,7 +532,7 @@ class Graph():
         cls,
         params: dict,
         tables: dict,
-        opt_dict: dict) -> tuple[go.Figure, dict]:
+        opt_dict: dict) -> tuple[go.Figure, dict] | dict:
 
         params = cls._set_contours(params=params, tables=tables)
 
@@ -537,21 +578,11 @@ class Graph():
                 epsilon=5)
             params['z2'] = spline(params['x2'], params['y2'])
 
-        # Initialize Figure object
-        if params['scatter']:
-            fig = cls._int_scatter(params=params, tables=tables)
-
-        # Plot just the surface
-        else:
-            fig = cls._int_surf(params=params)
-
-        # Format the chart layout
-        fig, opt_dict = cls._int_layout(
+        opt_dict = cls._create_opt_labels(
             params=params, 
-            fig=fig, 
-            opt_dict=opt_dict
-            )
-        
+            opt_dict=opt_dict, 
+            output='plotly')  
+
         opt_dict['strikes'] = np.array(tables['data_3D']['Strike'])
         opt_dict['ttms'] = np.array(tables['data_3D']['TTM'] * 365)
         opt_dict['vols'] = np.array(tables['data_3D']['Graph Vol'] * 100)
@@ -562,6 +593,21 @@ class Graph():
         opt_dict['vol_surface'] = params['z2']
 
         if params['show_graph']:
+            # Initialize Figure object
+            if params['scatter']:
+                fig = cls._int_scatter(params=params, tables=tables)
+
+            # Plot just the surface
+            else:
+                fig = cls._int_surf(params=params)
+
+            # Format the chart layout
+            fig = cls._int_layout(
+                params=params, 
+                fig=fig, 
+                opt_dict=opt_dict
+                )
+
             # If running within a Jupyter notebook, plot graph inline
             if params['notebook'] is True:
                 fig.show()
@@ -570,8 +616,9 @@ class Graph():
             else:
                 plot(fig, auto_open=True)
 
-        return fig, opt_dict
+            return fig, opt_dict
 
+        return opt_dict
 
     @staticmethod
     def _set_contours(
@@ -740,7 +787,7 @@ class Graph():
     def _int_layout(
         params: dict,
         fig: go.Figure,
-        opt_dict: dict) -> tuple[go.Figure,dict]:
+        opt_dict: dict) -> go.Figure:
 
         # Set initial camera angle
         params['camera'] = {
@@ -750,18 +797,6 @@ class Graph():
                 'z':1
                 }
             }
-        
-        xaxis_title = 'Time to Expiration (Days)'
-        yaxis_title = 'Strike'
-        zaxis_title = 'Implied Volatility %'
-
-        title = (
-            str(params['ticker_label'])
-            +' Implied Volatility '
-            +str(params['voltype'].title())
-            +' Price '
-            +str(params['start_date'])
-            )
 
         # Set Time To Expiration to increase left to right
         fig.update_scenes(xaxis_autorange="reversed")
@@ -787,14 +822,14 @@ class Graph():
                     },
                 'aspectmode': 'cube',
                 # Label axes
-                'xaxis_title': xaxis_title,
-                'yaxis_title': yaxis_title,
-                'zaxis_title': zaxis_title
+                'xaxis_title': opt_dict['x_label'],
+                'yaxis_title': opt_dict['y_label'],
+                'zaxis_title': opt_dict['z_label']
                 },
             # Specify title with ticker label, voltype
             # and date
             title={
-                'text': title,
+                'text': opt_dict['title'],
                 'y':0.9,
                 'x':0.5,
                 'xanchor':'center',
@@ -814,19 +849,48 @@ class Graph():
                 't':90
                 },
             scene_camera=params['camera'])
-        
-        opt_dict['title'] = title
-        opt_dict['xaxis_title'] = xaxis_title
-        opt_dict['yaxis_title'] = yaxis_title
-        opt_dict['zaxis_title'] = zaxis_title
+             
+        return fig
 
-        return fig, opt_dict
+
+    @staticmethod
+    def _create_opt_labels(
+        params: dict, 
+        opt_dict: dict,
+        output: str) -> dict:
+
+        if output == 'mpl':
+            # Add labels to option dictionary  
+            opt_dict['x_label'] = 'Strike'
+            opt_dict['y_label'] = 'Time to Expiration (Days)'
+            opt_dict['z_label'] = 'Implied Volatility %'
+            
+
+        elif output == 'line':
+            opt_dict['x_label'] = 'Strike'
+            opt_dict['y_label'] = 'Implied Volatility %'
+            opt_dict['legend_title'] = 'Option Expiry'
+
+        else: 
+            opt_dict['x_label'] = 'Time to Expiration (Days)'
+            opt_dict['y_label'] = 'Strike'
+            opt_dict['z_label'] = 'Implied Volatility %'
+
+        opt_dict['title'] = (
+            str(params['ticker_label'])
+            +' Implied Volatility '
+            +str(params['voltype'].title())
+            +' Price '
+            +str(params['start_date'])
+            )    
+
+        return opt_dict
 
 
     @staticmethod
     def _graph_format(
         params: dict, 
-        opt_dict: dict) -> tuple[mplfig.Figure, axes.Axes, dict]:
+        opt_dict: dict) -> tuple[mplfig.Figure, axes.Axes]:
 
         # Update chart parameters
         plt.rcParams.update(params['mpl_3D_params'])
@@ -860,18 +924,6 @@ class Graph():
         # Set fontsize of axis ticks
         ax.tick_params(axis='both', which='major', labelsize=ax_font_scale)
 
-        # Add labels to option dictionary  
-        opt_dict['x_label'] = 'Strike'
-        opt_dict['y_label'] = 'Time to Expiration (Days)'
-        opt_dict['z_label'] = 'Implied Volatility %'
-        opt_dict['title'] = (
-            str(params['ticker_label'])
-            +' Implied Volatility '
-            +str(params['voltype'].title())
-            +' Price '
-            +str(params['start_date'])
-            )
-
         # Label axes
         ax.set_xlabel(opt_dict['x_label'], fontsize=ax_font_scale,
                     labelpad=ax_font_scale*1.2)
@@ -891,7 +943,7 @@ class Graph():
         st.set_y(0.95)
         fig.subplots_adjust(top=1)
 
-        return fig, ax, opt_dict
+        return fig, ax
 
 
     @staticmethod
