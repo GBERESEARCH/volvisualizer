@@ -401,9 +401,9 @@ class Graph():
             output='mpl'
             )
         
-        opt_dict['strikes'] = params['x']
-        opt_dict['ttms'] = params['y']
-        opt_dict['vols'] = params['z']
+        opt_dict['strikes'] = np.array(params['x'])
+        opt_dict['ttms'] = np.array(params['y'])
+        opt_dict['vols'] = np.array(params['z'])
 
         if params['show_graph']:
             fig, ax = cls._graph_format(params=params, opt_dict=opt_dict)
@@ -508,9 +508,9 @@ class Graph():
             output='mpl'
             )    
 
-        opt_dict['strikes'] = params['x']
-        opt_dict['ttms'] = params['y']
-        opt_dict['vols'] = params['z']
+        opt_dict['strikes'] = np.array(params['x'])
+        opt_dict['ttms'] = np.array(params['y'])
+        opt_dict['vols'] = np.array(params['z'])
         opt_dict['strikes_linspace'] = x1
         opt_dict['ttms_linspace'] = y1
         opt_dict['strikes_linspace_array'] = x2
