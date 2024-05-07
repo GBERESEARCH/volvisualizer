@@ -76,7 +76,7 @@ Import volatility module and initialise a Volatility object that will extract UR
 
 ```
 from volvisualizer.volatility import Volatility
-imp = Volatility(ticker='^SPX', start_date='2021-8-18', wait=0.5, monthlies=True, q=0.013)
+imp = Volatility(ticker='^SPX', start_date='2021-8-18', wait=1, monthlies=True, q=0.013)
 ```
 
 
