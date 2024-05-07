@@ -4,6 +4,7 @@ Market data import and transformation functions
 """
 import copy
 from datetime import date, timedelta
+from dateutil import parser
 from io import StringIO
 import time
 import warnings
@@ -182,18 +183,28 @@ class Data():
         soup = BeautifulSoup(params['html_doc'], features="lxml")
 
         # Create a list of all the option dates
-        option_dates = [a.get_text() for a in soup.find_all('option')]
+        #option_dates = [a.get_text() for a in soup.find_all('option')]
+        option_dates = [a.get_text() for a in soup.findAll('div', {'role': 'option'})]
 
         # Convert this list from string to datetimes
-        dates_list = [dt.datetime.strptime(date, "%B %d, %Y").date() for date
-                      in option_dates]
+        #dates_list = [dt.datetime.strptime(date, "%B %d, %Y").date() for date
+        #              in option_dates]
+        dates_list = []
+        for date in option_dates:
+            date.rstrip()
+            try:
+                dates_list.append(parser.parse(date).date())
+            except:
+                pass
 
         # Convert back to strings in the required format
         str_dates = [date_obj.strftime('%Y-%m-%d') for date_obj in dates_list]
 
         # Create a list of all the unix dates used in the url for each
         # of these dates
-        option_pages = [a.attrs['value'] for a in soup.find_all('option')]
+        #option_pages = [a.attrs['value'] for a in soup.find_all('option')]
+        raw_option_pages = [a.attrs['data-value'] for a in soup.findAll('div', {'role': 'option'})]
+        option_pages = [num for num in raw_option_pages if ((len(num) == 10) and (num.isdigit()))]
 
         # Combine the dates and unixdates in a dictionary
         optodict = dict(zip(str_dates, option_pages))
@@ -283,31 +294,33 @@ class Data():
                 # Create a column designating these as calls
                 calls['Option Type'] = 'call'
 
-                try:
-                    # The second entry is 'puts'
-                    puts = params['option_dict'][input_date][1]
+                if str(calls['Strike'][0]).isdigit():
+                    try:
+                        # The second entry is 'puts'
+                        puts = params['option_dict'][input_date][1]
 
-                    # Create a column designating these as puts
-                    puts['Option Type'] = 'put'
+                        # Create a column designating these as puts
+                        puts['Option Type'] = 'put'
 
-                    # Concatenate these two DataFrames
-                    options = pd.concat([calls, puts])
+                        if str(puts['Strike'][0]).isdigit():
+                            # Concatenate these two DataFrames
+                            options = pd.concat([calls, puts])
 
-                    # Add an 'Expiry' column with the expiry date
-                    options['Expiry'] = pd.to_datetime(input_date).date()
+                            # Add an 'Expiry' column with the expiry date
+                            options['Expiry'] = pd.to_datetime(input_date).date()
 
-                    # Add this DataFrame to 'full_data'
-                    tables['full_data'] = pd.concat(
-                        [tables['full_data'], options])
+                            # Add this DataFrame to 'full_data'
+                            tables['full_data'] = pd.concat(
+                                [tables['full_data'], options])
 
-                except IndexError:
+                    except IndexError:
 
-                    # Add an 'Expiry' column with the expiry date
-                    calls['Expiry'] = pd.to_datetime(input_date).date()
+                        # Add an 'Expiry' column with the expiry date
+                        calls['Expiry'] = pd.to_datetime(input_date).date()
 
-                    # Add this DataFrame to 'full_data'
-                    tables['full_data'] = pd.concat(
-                        [tables['full_data'], calls])
+                        # Add this DataFrame to 'full_data'
+                        tables['full_data'] = pd.concat(
+                            [tables['full_data'], calls])
 
             except IndexError:
 
@@ -318,12 +331,13 @@ class Data():
                     # Create a column designating these as puts
                     puts['Option Type'] = 'put'
 
-                    # Add an 'Expiry' column with the expiry date
-                    puts['Expiry'] = pd.to_datetime(input_date).date()
+                    if str(puts['Strike'][0]).isdigit():
+                        # Add an 'Expiry' column with the expiry date
+                        puts['Expiry'] = pd.to_datetime(input_date).date()
 
-                    # Add this DataFrame to 'full_data'
-                    tables['full_data'] = pd.concat(
-                        [tables['full_data'], puts])
+                        # Add this DataFrame to 'full_data'
+                        tables['full_data'] = pd.concat(
+                            [tables['full_data'], puts])
 
                 except IndexError:
                     params['opt_except_list'].append(input_date)

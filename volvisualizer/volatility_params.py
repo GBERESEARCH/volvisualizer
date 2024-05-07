@@ -8,7 +8,7 @@ vol_params_dict = {
     'ticker':'^SPX',
     'ticker_label':None,
     'start_date':None,
-    'wait':5,
+    'wait':2,
     'minopts':None,
     'mindays':None,
     'lastmins':None,

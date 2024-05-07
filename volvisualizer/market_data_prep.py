@@ -9,6 +9,7 @@ import datetime as dt
 from datetime import date, timedelta
 import random
 import warnings
+from bs4 import BeautifulSoup
 from lxml import html
 import numpy as np
 import pandas as pd
@@ -112,23 +113,28 @@ class DataPrep():
         # Set timezone
         est = pytz.timezone('US/Eastern')
 
-        # Convert 'Last Trade Date' to a DateTime variable
+        # Convert 'Last Trade Date (EDT)' to a DateTime variable
         tables['data']['Last Trade Date Raw'] = (
-            tables['data']['Last Trade Date'])
+            tables['data']['Last Trade Date (EDT)'])
 
         # Format date based on Eastern Daylight or Standard Time
-        try:
-            tables['data']['Last Trade Date'] = pd.to_datetime(
-                tables['data']['Last Trade Date'],
-                format='%Y-%m-%d %I:%M%p EDT')
+        # try:
+        #     tables['data']['Last Trade Date (EDT)'] = pd.to_datetime(
+        #         tables['data']['Last Trade Date (EDT)'],
+        #         format='%Y-%m-%d %I:%M%p EDT')
 
-        except ValueError:
-            tables['data']['Last Trade Date'] = pd.to_datetime(
-                tables['data']['Last Trade Date'],
-                format='%Y-%m-%d %I:%M%p EST')
+        # except ValueError:
+        #     try:
+        #         tables['data']['Last Trade Date (EDT)'] = pd.to_datetime(
+        #             tables['data']['Last Trade Date (EDT)'],
+        #             format='%Y-%m-%d %I:%M%p EST')
+        #     except:
+        tables['data']['Last Trade Date (EDT)'] = pd.to_datetime(
+            tables['data']['Last Trade Date (EDT)'],
+            format='%m/%d/%Y %I:%M %p')
 
-        tables['data']['Last Trade Date'] = (
-            tables['data']['Last Trade Date'].apply(
+        tables['data']['Last Trade Date (EDT)'] = (
+            tables['data']['Last Trade Date (EDT)'].apply(
                 lambda x: x.replace(tzinfo=est)))
 
         # Create columns of expiry date as datetime object and str
@@ -139,7 +145,7 @@ class DataPrep():
 
         # Filter data from start date
         tables['data'] = (
-            tables['data'][tables['data']['Last Trade Date']>=str(
+            tables['data'][tables['data']['Last Trade Date (EDT)']>=str(
                 pd.to_datetime(params['start_date']))])
 
         tables = cls._trade_columns(tables=tables)
@@ -165,19 +171,19 @@ class DataPrep():
 
         # Create a column of the Trade Day
         tables['data']['Last Trade Day'] = (
-            tables['data']['Last Trade Date'].dt.date)
+            tables['data']['Last Trade Date (EDT)'].dt.date)
 
         # Create a column of the Trade Time of Day
         tables['data']['Last Trade Time'] = (
-            tables['data']['Last Trade Date'].dt.time)
+            tables['data']['Last Trade Date (EDT)'].dt.time)
 
         # Create a column of the Trade Hour of Day
         tables['data']['Last Trade Hour'] = (
-            tables['data']['Last Trade Date'].dt.hour)
+            tables['data']['Last Trade Date (EDT)'].dt.hour)
 
         # Create a column of the Trade Date represented in unixtime
         tables['data']['Unixtime'] = (
-            tables['data']['Last Trade Date'].view(np.int64) // 10**9)
+            tables['data']['Last Trade Date (EDT)'].astype(np.int64) // 10**9)
 
         # Clean Volume column
         tables['data']['Volume'] = (
@@ -439,11 +445,15 @@ class DataPrep():
 
         # Extract the spot level from the html data
         if params['spot'] is None:
-            tree = html.fromstring(params['html_doc'])
-            priceparse = tree.xpath(
-                '//fin-streamer[@class="Fw(b) Fz(36px) Mb(-4px) D(ib)"]/text()')
+            # tree = html.fromstring(params['html_doc'])
+            # priceparse = tree.xpath(
+            #     '//fin-streamer[@class="Fw(b) Fz(36px) Mb(-4px) D(ib)"]/text()')
+            # params['spot'] = float(
+            #     [str(p) for p in priceparse][0].replace(',',''))
+            soup = BeautifulSoup(params['html_doc'], features="lxml")
             params['spot'] = float(
-                [str(p) for p in priceparse][0].replace(',',''))
+                [a.attrs['data-value'] for a in soup.findAll(
+                    'fin-streamer', {'data-testid': 'qsp-price'})][0])
 
         # Calculate initial spot, min and max strikes to use in divisor
         # calculation
