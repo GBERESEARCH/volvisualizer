@@ -4,14 +4,15 @@ Market data import and transformation functions
 """
 import copy
 from datetime import date, timedelta
-from dateutil import parser
 from io import StringIO
 import time
 import warnings
-import datetime as dt
+#import datetime as dt
 from bs4 import BeautifulSoup
+from dateutil import parser
 import pandas as pd
 from pandas.tseries.holiday import get_calendar, HolidayCalendarFactory, GoodFriday
+import yfinance as yf
 from volvisualizer.market_data_prep import DataPrep, UrlOpener
 warnings.filterwarnings("ignore", category=DeprecationWarning)
 # pylint: disable=invalid-name
@@ -91,7 +92,8 @@ class Data():
 
         """
         # Extract URLs and option data
-        params, tables = cls.extractoptions(params=params, tables=tables)
+        # params, tables = cls.extractoptions(params=params, tables=tables)
+        params, tables = cls.get_option_data(params=params, tables=tables)
         print("Options data extracted")
 
         # Filter / transform data
@@ -104,6 +106,105 @@ class Data():
 
         return params, tables
 
+
+    @staticmethod
+    def get_option_data(params, tables):
+        """
+
+
+        Parameters
+        ----------
+        ticker : TYPE
+            DESCRIPTION.
+        params : TYPE
+            DESCRIPTION.
+        tables : TYPE
+            DESCRIPTION.
+
+        Returns
+        -------
+        params : TYPE
+            DESCRIPTION.
+        tables : TYPE
+            DESCRIPTION.
+
+        """
+        params['option_dict'] = {}
+        params['opt_except_list'] = []
+        tables['full_data'] = pd.DataFrame()
+        asset = yf.Ticker(params['ticker'])
+        params['extracted_spot'] = asset.info['currentPrice']
+        opt_list = asset.options
+        params['date_list'] = opt_list
+        for expiry in opt_list:
+            params['option_dict'][expiry] = []
+            chain = asset.option_chain(expiry)
+            try:
+                calls = chain.calls
+
+                # Create a column designating these as calls
+                calls['Option Type'] = 'call'
+
+                if isinstance(calls['strike'][0], (int, float, complex)):
+                    params['option_dict'][expiry].append(calls)
+                    try:
+                        puts = chain.puts
+
+                        # Create a column designating these as puts
+                        puts['Option Type'] = 'put'
+
+                        if isinstance(puts['strike'][0], (int, float, complex)):
+                            params['option_dict'][expiry].append(puts)
+                            # Concatenate these two DataFrames
+                            options = pd.concat([calls, puts])
+
+                            # Add an 'Expiry' column with the expiry date
+                            options['Expiry'] = pd.to_datetime(expiry).date()
+
+                            # Add this DataFrame to 'full_data'
+                            tables['full_data'] = pd.concat(
+                                [tables['full_data'], options])
+
+                    except IndexError:
+                        # Add an 'Expiry' column with the expiry date
+                        calls['Expiry'] = pd.to_datetime(expiry).date()
+
+                        # Add this DataFrame to 'full_data'
+                        tables['full_data'] = pd.concat(
+                            [tables['full_data'], calls])
+
+            except IndexError:
+                try:
+                    # The second entry is 'puts'
+                    puts = chain.puts
+
+                    # Create a column designating these as puts
+                    puts['Option Type'] = 'put'
+
+                    if isinstance(puts['strike'][0], (int, float, complex)):
+                        params['option_dict'][expiry][1] = puts
+                        # Add an 'Expiry' column with the expiry date
+                        puts['Expiry'] = pd.to_datetime(expiry).date()
+
+                        # Add this DataFrame to 'full_data'
+                        tables['full_data'] = pd.concat(
+                            [tables['full_data'], puts])
+
+                except IndexError:
+                    params['opt_except_list'].append(expiry)
+
+        tables['full_data'] = tables['full_data'].rename(columns={
+            'lastPrice': 'Last Price',
+            'bid': 'Bid',
+            'ask': 'Ask',
+            'lastTradeDate': 'Last Trade Date',
+            'strike': 'Strike',
+            'openInterest': 'Open Interest',
+            'volume': 'Volume',
+            'impliedVolatility': 'Implied Volatility'
+            })
+
+        return params, tables
 
     @classmethod
     def extractoptions(
@@ -190,10 +291,10 @@ class Data():
         #dates_list = [dt.datetime.strptime(date, "%B %d, %Y").date() for date
         #              in option_dates]
         dates_list = []
-        for date in option_dates:
-            date.rstrip()
+        for option_date in option_dates:
+            option_date.rstrip()
             try:
-                dates_list.append(parser.parse(date).date())
+                dates_list.append(parser.parse(option_date).date())
             except:
                 pass
 
