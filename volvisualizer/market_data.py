@@ -150,36 +150,37 @@ class Data():
 
                 # Create a column designating these as calls
                 calls['Option Type'] = 'call'
+                if len(calls) > 0:
+                    if isinstance(calls['strike'][0], (int, float, complex)):
+                        params['option_dict'][expiry].append(calls)
+                        try:
+                            puts = chain.puts
 
-                if isinstance(calls['strike'][0], (int, float, complex)):
-                    params['option_dict'][expiry].append(calls)
-                    try:
-                        puts = chain.puts
+                            # Create a column designating these as puts
+                            puts['Option Type'] = 'put'
 
-                        # Create a column designating these as puts
-                        puts['Option Type'] = 'put'
+                            if len(puts) > 0:
+                                if isinstance(puts['strike'][0], (int, float, complex)):
+                                    params['option_dict'][expiry].append(puts)
+                                    # Concatenate these two DataFrames
+                                    options = pd.concat([calls, puts])
 
-                        if isinstance(puts['strike'][0], (int, float, complex)):
-                            params['option_dict'][expiry].append(puts)
-                            # Concatenate these two DataFrames
-                            options = pd.concat([calls, puts])
+                                    # Add an 'Expiry' column with the expiry date
+                                    options['Expiry'] = pd.to_datetime(expiry).date()
 
+                                    # Add this DataFrame to 'full_data'
+                                    tables['full_data'] = pd.concat(
+                                        [tables['full_data'], options])
+
+                        except IndexError or KeyError or ValueError:
                             # Add an 'Expiry' column with the expiry date
-                            options['Expiry'] = pd.to_datetime(expiry).date()
+                            calls['Expiry'] = pd.to_datetime(expiry).date()
 
                             # Add this DataFrame to 'full_data'
                             tables['full_data'] = pd.concat(
-                                [tables['full_data'], options])
+                                [tables['full_data'], calls])
 
-                    except IndexError:
-                        # Add an 'Expiry' column with the expiry date
-                        calls['Expiry'] = pd.to_datetime(expiry).date()
-
-                        # Add this DataFrame to 'full_data'
-                        tables['full_data'] = pd.concat(
-                            [tables['full_data'], calls])
-
-            except IndexError:
+            except IndexError or KeyError or ValueError:
                 try:
                     # The second entry is 'puts'
                     puts = chain.puts
@@ -187,16 +188,17 @@ class Data():
                     # Create a column designating these as puts
                     puts['Option Type'] = 'put'
 
-                    if isinstance(puts['strike'][0], (int, float, complex)):
-                        params['option_dict'][expiry][1] = puts
-                        # Add an 'Expiry' column with the expiry date
-                        puts['Expiry'] = pd.to_datetime(expiry).date()
+                    if len(puts) > 0:
+                        if isinstance(puts['strike'][0], (int, float, complex)):
+                            params['option_dict'][expiry][1] = puts
+                            # Add an 'Expiry' column with the expiry date
+                            puts['Expiry'] = pd.to_datetime(expiry).date()
 
-                        # Add this DataFrame to 'full_data'
-                        tables['full_data'] = pd.concat(
-                            [tables['full_data'], puts])
+                            # Add this DataFrame to 'full_data'
+                            tables['full_data'] = pd.concat(
+                                [tables['full_data'], puts])
 
-                except IndexError:
+                except IndexError or KeyError or ValueError:
                     params['opt_except_list'].append(expiry)
 
         tables['full_data'] = tables['full_data'].rename(columns={
