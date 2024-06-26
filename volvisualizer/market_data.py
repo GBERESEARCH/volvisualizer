@@ -133,7 +133,13 @@ class Data():
         params['opt_except_list'] = []
         tables['full_data'] = pd.DataFrame()
         asset = yf.Ticker(params['ticker'])
-        params['extracted_spot'] = asset.info['currentPrice']
+
+        try:
+            extracted_spot = asset.info['currentPrice']
+        except KeyError:
+            extracted_spot = asset.info['previousClose']
+        params['extracted_spot'] = extracted_spot
+        
         opt_list = asset.options
         params['date_list'] = opt_list
         for expiry in opt_list:
