@@ -766,8 +766,9 @@ class DataPrep():
                     rates.append(rate)
 
         else:
-            tenors = [1, 10952]
-            rates = [r, r]
+            rate = r * 100
+            tenors = [1, 2738, 5476, 8214, 10952]
+            rates = [rate, rate, rate, rate, rate]
 
         # Create a curve using cubic spline interpolation
         yield_curve = interpolate.interp1d(tenors, rates, kind='cubic')
