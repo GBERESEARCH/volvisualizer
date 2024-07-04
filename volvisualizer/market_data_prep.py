@@ -186,20 +186,25 @@ class DataPrep():
             tables['data']['Last Trade Date'].astype(np.int64) // 10**9)
 
         # Clean Volume column
+        tables['data']['Volume'] = tables['data']['Volume'].fillna(0)
         tables['data']['Volume'] = (
             tables['data']['Volume'].replace('-',0).astype(int))
 
         # Clean Open Interest column
+        tables['data']['Open Interest'] = tables['data']['Open Interest'].fillna(0)
         tables['data']['Open Interest'] = (
             tables['data']['Open Interest'].replace('-',0).astype(int))
 
         # Clean Ask column
+        tables['data']['Ask'] = tables['data']['Ask'].fillna(0)
         tables['data']['Ask'] = (
             tables['data']['Ask'].replace('-',0).astype(float))
 
         # Clean Bid column
+        tables['data']['Bid'] = tables['data']['Bid'].fillna(0)
         tables['data']['Bid'] = (
             tables['data']['Bid'].replace('-',0).astype(float))
+
 
         # Create Mid column
         tables['data']['Mid'] = (
