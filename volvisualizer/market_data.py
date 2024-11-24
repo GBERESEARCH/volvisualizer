@@ -137,7 +137,13 @@ class Data():
         try:
             extracted_spot = asset.info['currentPrice']
         except KeyError:
-            extracted_spot = asset.info['previousClose']
+            try:
+                extracted_spot = (asset.info['bid'] + asset.info['ask'])/2
+            except KeyError:
+                try:
+                    extracted_spot = asset.info['navPrice']
+                except:
+                    extracted_spot = asset.info['previousClose']
         params['extracted_spot'] = extracted_spot
         
         opt_list = asset.options
