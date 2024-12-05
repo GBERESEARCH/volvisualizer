@@ -17,9 +17,9 @@ $ pip install volvisualizer
 
 Install in a new environment using Python venv:
 
-Create base environment of Python 3.10 (subsequent versions don't support matplotlib version 3.5.3)
+Create base environment of Python 3.13
 ```
-$ py -3.10 -m venv .venv
+$ py -3.13 -m venv .venv
 ```
 Activate new environment
 ```
@@ -28,10 +28,6 @@ $ .venv\scripts\activate
 Ensure pip is up to date
 ``` 
 $ (.venv) python -m pip install --upgrade pip
-```
-Install matplotlib version 3.5.3 (subsequent versions have deprecated some of the 3D graph functionality)
-``` 
-$ (.venv) python -m pip install matplotlib==3.5.3
 ```
 Install Spyder
 ```
@@ -54,11 +50,7 @@ $ activate volvis
 ```
 Install Python
 ```
-(volvis) $ conda install python==3.10
-```
-Install matplotlib version 3.5.3 (subsequent versions have deprecated some of the 3D graph functionality)
-``` 
-$ (.venv) conda install matplotlib==3.5.3
+(volvis) $ conda install python==3.13
 ```
 Install Spyder
 ```
