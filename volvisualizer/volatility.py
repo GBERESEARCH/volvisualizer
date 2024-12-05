@@ -5,10 +5,10 @@ Extract option prices from Yahoo Finance and visualize volatility
 
 import copy
 from volvisualizer.graph import Graph
-from volvisualizer.market_data import Data
-from volvisualizer.utils import Utils
-from volvisualizer.volatility_params import vol_params_dict
-from volvisualizer.vol_methods import VolMethods
+from volvisdata.market_data import Data
+from volvisdata.utils import Utils
+from volvisdata.volatility_params import vol_params_dict
+from volvisdata.vol_methods import VolMethods
 
 class Volatility():
     """

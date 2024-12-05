@@ -14,7 +14,7 @@ from matplotlib import axes
 from mpl_toolkits.mplot3d import Axes3D # pylint: disable=unused-import
 from plotly.offline import plot
 from scipy.interpolate import griddata
-from volvisualizer.vol_methods import VolMethods
+from volvisdata.vol_methods import VolMethods
 # pylint: disable=invalid-name, consider-using-f-string
 
 class Graph():
@@ -61,7 +61,7 @@ class Graph():
         tenor_date_dict = dict(zip(dates, tenors))
 
         if params['show_graph']:
-            plt.style.use('seaborn-darkgrid')
+            plt.style.use('seaborn-v0_8-darkgrid')
             plt.rcParams.update(params['mpl_line_params'])
             fig_size = (12, 9)
 
@@ -211,7 +211,7 @@ class Graph():
         if params['show_graph']:
             fig, ax = cls._graph_format(params=params, opt_dict=opt_dict)
             
-            ax.scatter3D(opt_dict['strikes'], opt_dict['ttms'], opt_dict['vols'], c=opt_dict['vols'], cmap='viridis')
+            ax.scatter(opt_dict['strikes'], opt_dict['ttms'], opt_dict['vols'], c=opt_dict['vols'], cmap='viridis')
 
         if params['save_image']:
             # save the image as a png file
@@ -528,7 +528,7 @@ class Graph():
             if params['scatter']:
                 params['z'] = tables['data_3D'][str(
                     params['vols_dict'][str(params['voltype'])])] * 100
-                ax.scatter3D(params['x'], params['y'], params['z'], c='r')
+                ax.scatter(params['x'], params['y'], params['z'], c='r')
 
             return fig, opt_dict
         
@@ -903,6 +903,14 @@ class Graph():
         # Update chart parameters
         plt.rcParams.update(params['mpl_3D_params'])
 
+        # with plt.rc_context(
+        #     {
+        #         'axes3d.xaxis.panecolor': (0.9, 0.8, 0.9, 0.8),
+        #         'axes3d.yaxis.panecolor': (0.8, 0.8, 0.9, 0.8),
+        #         'axes3d.zaxis.panecolor': (0.9, 0.9, 0.8, 0.8)
+        #         }
+        #     ):
+
         # Create fig object
         fig = plt.figure(figsize=params['fig_size'])
 
@@ -922,23 +930,47 @@ class Graph():
 
         # Tint the axis panes, RGB values from 0-1 and alpha denoting
         # color intensity
-        ax.w_xaxis.set_pane_color((0.9, 0.8, 0.9, 0.8))
-        ax.w_yaxis.set_pane_color((0.8, 0.8, 0.9, 0.8))
-        ax.w_zaxis.set_pane_color((0.9, 0.9, 0.8, 0.8))
+        ax.xaxis.set_pane_color((0.9, 0.8, 0.9, 0.8))
+        ax.yaxis.set_pane_color((0.8, 0.8, 0.9, 0.8))
+        ax.zaxis.set_pane_color((0.9, 0.9, 0.8, 0.8))
 
         # Set z-axis to left hand side
         ax.zaxis._axinfo['juggled'] = (1, 2, 0) # pylint: disable=protected-access
 
+        # for axis in ax.xaxis, ax.yaxis, ax.zaxis:
+        #     axis.set_label_position('lower')
+        #     axis.set_ticks_position('lower')
+
         # Set fontsize of axis ticks
-        ax.tick_params(axis='both', which='major', labelsize=ax_font_scale)
+        ax.tick_params(
+            axis='both', 
+            which='major', 
+            labelsize=ax_font_scale,
+            pad=ax_font_scale*0.1
+            )
 
         # Label axes
-        ax.set_xlabel(opt_dict['x_label'], fontsize=ax_font_scale,
-                    labelpad=ax_font_scale*1.2)
-        ax.set_ylabel(opt_dict['y_label'], fontsize=ax_font_scale,
-                    labelpad=ax_font_scale*1.2)
-        ax.set_zlabel(opt_dict['z_label'], fontsize=ax_font_scale,
-                    labelpad=ax_font_scale*1.2)
+        ax.set_xlabel(
+            opt_dict['x_label'], 
+            fontsize=ax_font_scale,
+            labelpad=ax_font_scale*0.6
+            )
+        ax.set_ylabel(
+            opt_dict['y_label'], 
+            fontsize=ax_font_scale,
+            labelpad=ax_font_scale*0.6
+            )
+        ax.set_zlabel(
+            opt_dict['z_label'], 
+            fontsize=ax_font_scale,
+            labelpad=ax_font_scale*0.2
+            )
+        #plt.zlabel(opt_dict['z_label'], fontsize=14)
+        # ax.set(
+        #     zlabel=opt_dict['z_label'], 
+        #     fontsize=ax_font_scale, 
+        #     labelpad=ax_font_scale*1.2
+        #     )
 
         # Specify title with ticker label, voltype and date
         st = fig.suptitle(opt_dict['title'],
