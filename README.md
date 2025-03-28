@@ -40,29 +40,6 @@ $ (.venv) python -m pip install volvisualizer
 
 &nbsp;
 
-To install in new environment using anaconda:
-```
-$ conda create --name volvis
-```
-Activate new environment
-```
-$ activate volvis
-```
-Install Python
-```
-(volvis) $ conda install python==3.13
-```
-Install Spyder
-```
-(volvis) $ conda install spyder
-```
-Install package
-```
-(volvis) $ pip install volvisualizer
-```
-
-&nbsp;
-
 ### Setup
 Import volatility module and initialise a Volatility object that will extract URLs and the option data for each tenor, here specifying S&P500 as the ticker, a start date of 18th August 2021, a delay of 0.5 seconds between each API call, select only monthly expiries and a dividend yield of 1.3%.
 
