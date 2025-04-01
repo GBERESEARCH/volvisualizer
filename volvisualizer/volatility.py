@@ -9,6 +9,7 @@ from volvisdata.market_data import Data
 from volvisdata.utils import Utils
 from volvisdata.volatility_params import vol_params_dict
 from volvisdata.vol_methods import VolMethods
+from volvisdata.skew_report import SkewReport
 
 class Volatility():
     """
@@ -105,6 +106,7 @@ class Volatility():
             surface_models['vol_surface_smoothed'] = VolMethods.map_vols(
                 params=params, tables=tables)
 
+        self.data_dict = {}
         self.params = params
         self.tables = tables
         self.surface_models = surface_models
@@ -183,35 +185,35 @@ class Volatility():
             if self.params['data_output']:
                 self.data_dict = Graph.line_graph(
                 params=self.params, tables=self.tables)
-                return self.data_dict 
-            
+
             self.params, self.tables = Graph.line_graph(
                 params=self.params, tables=self.tables)
-            return None
 
         elif self.params['graphtype'] == 'scatter':
             if self.params['data_output']:
                 self.data_dict = Graph.scatter_3d(
                 params=self.params, tables=self.tables)
-                return self.data_dict
-            
+
             self.params, self.tables = Graph.scatter_3d(
                 params=self.params, tables=self.tables)
-            return None
 
         elif self.params['graphtype'] == 'surface':
             if self.params['data_output']:
                 self.data_dict = Graph.surface_3d(
                 params=self.params, tables=self.tables)
-                return self.data_dict
-            
+
             self.params, self.tables = Graph.surface_3d(
                 params=self.params, tables=self.tables)
-            return None
 
         else:
             print ("Please select a graphtype from 'line', "\
                    "'scatter' and 'surface'")
+
+        if self.params['data_output']:
+            return self.data_dict
+
+        return None
+
 
     def linegraph(self, **kwargs):
         """
@@ -412,7 +414,7 @@ class Volatility():
         if direction is not None:
             self.params['skew_direction'] = direction
 
-        vol_dict = VolMethods.create_vol_dict(
+        vol_dict = SkewReport.create_vol_dict(
             params=self.params, surface_models=self.surface_models)
 
         if self.params['data_output']:
@@ -422,5 +424,5 @@ class Volatility():
             }
             return data_dict
 
-        return VolMethods.print_skew_report(
+        return SkewReport.print_skew_report(
             vol_dict=vol_dict, params=self.params)
