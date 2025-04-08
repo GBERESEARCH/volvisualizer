@@ -124,8 +124,7 @@ class Volatility():
             default is 'line'.
         surfacetype : Str
             The type of 3D surface to display from 'trisurf', 'mesh',
-            spline', 'interactive_mesh' and 'interactive_spline'. The
-            default is 'mesh'.
+            spline', 'svi', 'interactive_mesh', 'interactive_spline' and 'interactive_svi'. The default is 'mesh'.
         smoothing : Bool
             Whether to apply polynomial smoothing. The default is False.
         scatter : Bool
@@ -298,8 +297,7 @@ class Volatility():
         ----------
         surfacetype : Str
             The type of 3D surface to display from 'trisurf', 'mesh',
-            'spline', 'interactive_mesh' and 'interactive_spline'.
-            The default is 'mesh'.
+            spline', 'svi', 'interactive_mesh', 'interactive_spline' and 'interactive_svi'. The default is 'mesh'.
         smoothing : Bool
             Whether to apply polynomial smoothing. The default is False.
         scatter : Bool

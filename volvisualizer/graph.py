@@ -15,7 +15,9 @@ from mpl_toolkits.mplot3d import Axes3D # pylint: disable=unused-import
 from plotly.offline import plot
 from scipy.interpolate import griddata
 from volvisdata.vol_methods import VolMethods
+from volvisdata.svi_model import SVIModel
 # pylint: disable=invalid-name, consider-using-f-string
+
 
 class Graph():
     """
@@ -346,15 +348,19 @@ class Graph():
             elif params['surfacetype'] == 'spline':
                 fig, opt_dict = cls._spline_graph(
                     params=params, tables=tables, opt_dict=opt_dict)
+                
+            elif params['surfacetype'] == 'svi':
+                fig, opt_dict = cls._svi_graph(params=params, tables=tables, opt_dict=opt_dict)
 
-            elif params['surfacetype'] in ['interactive_mesh',
-                                        'interactive_spline']:
-                fig, opt_dict = cls._interactive_graph(
-                    params=params, tables=tables, opt_dict=opt_dict)
+            elif params['surfacetype'] in [
+                'interactive_mesh',
+                'interactive_spline',
+                'interactive_svi']:
+                fig, opt_dict = cls._interactive_graph(params=params, tables=tables, opt_dict=opt_dict)
 
             else:
                 print("Enter a valid surfacetype from 'trisurf', 'mesh', "\
-                    "'spline', 'interactive_mesh', 'interactive_spline'")
+                    "'spline', 'svi', 'interactive_mesh', 'interactive_spline', 'interactive_svi'")
 
             if params['save_image']:
                 # save the image as a png file
@@ -371,15 +377,18 @@ class Graph():
                 opt_dict = cls._spline_graph(
                     params=params, tables=tables, opt_dict=opt_dict)
 
+            elif params['surfacetype'] == 'svi':
+                opt_dict = cls._svi_graph(params=params, tables=tables, opt_dict=opt_dict)
+
             elif params['surfacetype'] in [
                 'interactive_mesh',
-                'interactive_spline']:
-                opt_dict = cls._interactive_graph(
-                    params=params, tables=tables, opt_dict=opt_dict)
+                'interactive_spline',
+                'interactive_svi']:
+                opt_dict = cls._interactive_graph(params=params, tables=tables, opt_dict=opt_dict)
 
             else:
                 print("Enter a valid surfacetype from 'trisurf', 'mesh', "\
-                    "'spline', 'interactive_mesh', 'interactive_spline'")
+                    "'spline', 'svi', 'interactive_mesh', 'interactive_spline', 'interactive_svi'")
 
         # Set warnings back to default
         warnings.filterwarnings("default", category=UserWarning)
@@ -416,7 +425,7 @@ class Graph():
             fig, ax = cls._graph_format(params=params, opt_dict=opt_dict)
 
             # Display triangular surface plot, using colormap 'viridis'
-            ax.plot_trisurf(params['x'],
+            ax.plot_trisurf(params['x'], #type: ignore
                             params['y'],
                             params['z'],
                             cmap='viridis',
@@ -464,7 +473,7 @@ class Graph():
         # Plot the surface
         if params['show_graph']:
             fig, ax = cls._graph_format(params=params, opt_dict=opt_dict)
-            ax.plot_surface(x1, y1, z1)
+            ax.plot_surface(x1, y1, z1) #type: ignore
 
             # Apply contour lines
             ax.contour(x1, y1, z1)
@@ -527,8 +536,92 @@ class Graph():
         # Plot the surface
         if params['show_graph']:
             fig, ax = cls._graph_format(params=params, opt_dict=opt_dict)
-            ax.plot_wireframe(x2, y2, z2)
-            ax.plot_surface(x2, y2, z2, alpha=0.2)
+            ax.plot_wireframe(x2, y2, z2) #type: ignore
+            ax.plot_surface(x2, y2, z2, alpha=0.2) #type: ignore
+
+            # If scatter is True, overlay the surface with the
+            # unsmoothed scatter points
+            if params['scatter']:
+                params['z'] = tables['data_3D'][str(
+                    params['vols_dict'][str(params['voltype'])])] * 100
+                ax.scatter(params['x'], params['y'], params['z'], c='r')
+
+            return fig, opt_dict
+
+        return opt_dict
+    
+
+    @classmethod
+    def _svi_graph(
+        cls,
+        params: dict,
+        tables: dict,
+        opt_dict: dict) -> tuple[mplfig.Figure, dict] | dict:
+        """
+        Returns data for plotting a 3D surface using SVI (Stochastic Volatility Inspired) model
+
+        Parameters
+        ----------
+        params : dict
+            Dictionary of parameters
+        tables : dict
+            Dictionary of data tables
+        opt_dict : dict
+            Dictionary for storing output data
+
+        Returns
+        -------
+        dict
+            Updated opt_dict with SVI surface data
+        """
+        # Fit SVI model to volatility data
+        svi_params = SVIModel.fit_svi_surface(tables['data_3D'], params)
+
+        # Create arrays across x and y-axes of equally spaced points
+        # from min to max values
+        x1 = np.linspace(min(params['x']),
+                        max(params['x']),
+                        int(params['spacegrain']))
+        y1 = np.linspace(min(params['y']),
+                        max(params['y']),
+                        int(params['spacegrain']))
+        x2, y2 = np.meshgrid(x1, y1, indexing='xy')
+
+        # Convert TTM from days to years
+        ttm_grid_years = y2 / 365
+
+        # Compute SVI surface
+        vol_surface_decimal = SVIModel.compute_svi_surface(
+            strikes_grid=x2, 
+            ttms_grid=ttm_grid_years, 
+            svi_params=svi_params, 
+            params=params
+            )
+        
+        z2 = vol_surface_decimal * 100
+
+        # Create figure and axis objects and format
+        opt_dict = cls._create_opt_labels(
+            params=params,
+            opt_dict=opt_dict,
+            output='mpl'
+        )
+
+        opt_dict['strikes'] = np.array(params['x'])
+        opt_dict['ttms'] = np.array(params['y'])
+        opt_dict['vols'] = np.array(params['z'])
+        opt_dict['strikes_linspace'] = x1
+        opt_dict['ttms_linspace'] = y1
+        opt_dict['strikes_linspace_array'] = x2
+        opt_dict['ttms_linspace_array'] = y2
+        opt_dict['vol_surface'] = z2
+        # opt_dict['svi_params'] = svi_params
+
+        # Plot the surface
+        if params['show_graph']:
+            fig, ax = cls._graph_format(params=params, opt_dict=opt_dict)
+            ax.plot_wireframe(x2, y2, z2) #type: ignore
+            ax.plot_surface(x2, y2, z2, alpha=0.2) #type: ignore
 
             # If scatter is True, overlay the surface with the
             # unsmoothed scatter points
@@ -592,6 +685,25 @@ class Graph():
                 smooth=5,
                 epsilon=5)
             params['z2'] = spline(params['x2'], params['y2'])
+
+        # If surfacetype is 'interactive_svi', use SVI model for surface
+        elif params['surfacetype'] == 'interactive_svi':
+            # Step 1: Fit SVI model to data
+            svi_params = SVIModel.fit_svi_surface(tables['data_3D'], params)
+
+            # Step 2: Prepare time to maturity grid in years (Plotly uses days)
+            ttm_grid_years = params['x2'] / 365  # Convert days to years
+
+            # Step 3: Calculate the surface using the SVIModel's dedicated method
+            vol_surface_decimal = SVIModel.compute_svi_surface(
+                strikes_grid=params['y2'],  # Strike grid
+                ttms_grid=ttm_grid_years,  # TTM grid in years
+                svi_params=svi_params,  # SVI parameters by maturity
+                params=params
+            )
+
+            # Step 4: Convert volatility from decimal to percentage for display
+            params['z2'] = vol_surface_decimal * 100
 
         opt_dict = cls._create_opt_labels(
             params=params,
@@ -937,12 +1049,12 @@ class Graph():
 
         # Tint the axis panes, RGB values from 0-1 and alpha denoting
         # color intensity
-        ax.xaxis.set_pane_color((0.9, 0.8, 0.9, 0.8))
-        ax.yaxis.set_pane_color((0.8, 0.8, 0.9, 0.8))
-        ax.zaxis.set_pane_color((0.9, 0.9, 0.8, 0.8))
+        ax.xaxis.set_pane_color((0.9, 0.8, 0.9, 0.8)) #type: ignore
+        ax.yaxis.set_pane_color((0.8, 0.8, 0.9, 0.8)) #type: ignore
+        ax.zaxis.set_pane_color((0.9, 0.9, 0.8, 0.8)) #type: ignore
 
         # Set z-axis to left hand side
-        ax.zaxis._axinfo['juggled'] = (1, 2, 0) # pylint: disable=protected-access
+        ax.zaxis._axinfo['juggled'] = (1, 2, 0) # pylint: disable=protected-access #type: ignore
 
         # for axis in ax.xaxis, ax.yaxis, ax.zaxis:
         #     axis.set_label_position('lower')
@@ -967,7 +1079,7 @@ class Graph():
             fontsize=ax_font_scale,
             labelpad=ax_font_scale*0.6
             )
-        ax.set_zlabel(
+        ax.set_zlabel( #type: ignore
             opt_dict['z_label'],
             fontsize=ax_font_scale,
             labelpad=ax_font_scale*0.2
