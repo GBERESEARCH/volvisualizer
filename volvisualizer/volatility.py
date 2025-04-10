@@ -102,8 +102,7 @@ class Volatility():
 
         # Map volatilities
         surface_models = {}
-        surface_models['vol_surface'], \
-            surface_models['vol_surface_smoothed'] = VolMethods.map_vols(
+        surface_models['vol_surface'], surface_models['vol_surface_smoothed'], surface_models['vol_surface_svi'] = VolMethods.map_vols(
                 params=params, tables=tables)
 
         self.data_dict = {}
